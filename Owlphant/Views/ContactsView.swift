@@ -198,6 +198,17 @@ private struct ContactCardView: View {
                 }
             }
 
+            if contact.coffeeReminderAt != nil || (contact.stayInTouchEveryDays ?? 0) > 0 {
+                FlowLayout(spacing: 6) {
+                    if contact.coffeeReminderAt != nil {
+                        PillView(label: "☕️")
+                    }
+                    if let stayInTouchEveryDays = contact.stayInTouchEveryDays, stayInTouchEveryDays > 0 {
+                        PillView(label: "🤙")
+                    }
+                }
+            }
+
             if !contact.relationships.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -326,6 +337,7 @@ private struct ContactFormSheet: View {
     @State private var contactChannelsExpanded = false
     @State private var personalExpanded = false
     @State private var relationshipsExpanded = false
+    @State private var remindersExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -369,7 +381,7 @@ private struct ContactFormSheet: View {
                                     ForEach(Array(Self.monthLabels.enumerated()), id: \.offset) { idx, label in
                                         Text(label)
                                             .lineLimit(1)
-                                            .tag(Optional(idx + 1))
+                                            .tag((idx + 1) as Int?)
                                     }
                                 }
                                 .pickerStyle(.menu)
@@ -431,6 +443,8 @@ private struct ContactFormSheet: View {
                                 .lineLimit(3...5)
                                 .appInputChrome()
                         }
+
+                        remindersSection
 
                         relationshipSection
 
@@ -588,6 +602,35 @@ private struct ContactFormSheet: View {
         }
     }
 
+    private var remindersSection: some View {
+        FormDisclosureSection(title: L10n.tr("contacts.form.section.reminders"), isExpanded: $remindersExpanded) {
+            Toggle(L10n.tr("contacts.form.reminder.coffee"), isOn: coffeeReminderEnabledBinding)
+                .toggleStyle(.switch)
+
+            if coffeeReminderEnabledBinding.wrappedValue {
+                DatePicker(
+                    "",
+                    selection: coffeeReminderDateBinding,
+                    in: Date()...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .labelsHidden()
+                .appInputChrome()
+            }
+
+            Divider()
+
+            Toggle(L10n.tr("contacts.form.reminder.stayInTouch"), isOn: stayInTouchEnabledBinding)
+                .toggleStyle(.switch)
+
+            if stayInTouchEnabledBinding.wrappedValue {
+                Stepper(value: stayInTouchDaysBinding, in: 1 ... 365) {
+                    Text(L10n.format("contacts.form.reminder.stayInTouchDays", stayInTouchDaysBinding.wrappedValue))
+                }
+            }
+        }
+    }
+
     private var sortedDraftRelationships: [ContactRelationship] {
         viewModel.form.relationships.sorted { lhs, rhs in
             if lhs.type.sortRank == rhs.type.sortRank {
@@ -646,11 +689,72 @@ private struct ContactFormSheet: View {
         )
     }
 
+    private var coffeeReminderEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.form.coffeeReminderAt != nil },
+            set: { isEnabled in
+                if isEnabled {
+                    if viewModel.form.coffeeReminderAt == nil {
+                        viewModel.form.coffeeReminderAt = Date().addingTimeInterval(3600).timeIntervalSince1970
+                    }
+                } else {
+                    viewModel.form.coffeeReminderAt = nil
+                }
+            }
+        )
+    }
+
+    private var coffeeReminderDateBinding: Binding<Date> {
+        Binding(
+            get: {
+                if let timestamp = viewModel.form.coffeeReminderAt {
+                    return Date(timeIntervalSince1970: timestamp)
+                }
+                return Date().addingTimeInterval(3600)
+            },
+            set: { newValue in
+                viewModel.form.coffeeReminderAt = newValue.timeIntervalSince1970
+            }
+        )
+    }
+
+    private var stayInTouchEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { (viewModel.form.stayInTouchEveryDays ?? 0) > 0 },
+            set: { isEnabled in
+                if isEnabled {
+                    if (viewModel.form.stayInTouchEveryDays ?? 0) <= 0 {
+                        viewModel.form.stayInTouchEveryDays = 30
+                    }
+                } else {
+                    viewModel.form.stayInTouchEveryDays = nil
+                }
+            }
+        )
+    }
+
+    private var stayInTouchDaysBinding: Binding<Int> {
+        Binding(
+            get: {
+                let value = viewModel.form.stayInTouchEveryDays ?? 30
+                return min(max(value, 1), 365)
+            },
+            set: { newValue in
+                viewModel.form.stayInTouchEveryDays = min(max(newValue, 1), 365)
+            }
+        )
+    }
+
     private static var monthLabels: [String] {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale.current
-        return formatter.shortStandaloneMonthSymbols ?? formatter.shortMonthSymbols
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.setLocalizedDateFormatFromTemplate("MMM")
+        return (1...12).compactMap { month in
+            let components = DateComponents(year: 2001, month: month, day: 1)
+            guard let date = formatter.calendar.date(from: components) else { return nil }
+            return formatter.string(from: date)
+        }
     }
 
     private static var yearOptions: [Int] {

@@ -20,6 +20,8 @@ struct ContactFormState {
     var x = ""
     var notes = ""
     var tags = ""
+    var coffeeReminderAt: TimeInterval?
+    var stayInTouchEveryDays: Int?
 
     var relationships: [ContactRelationship] = []
     var relationshipDraftTargetId: UUID?
@@ -81,7 +83,7 @@ final class ContactsViewModel: ObservableObject {
             }
 
             contacts = localContacts.sorted { $0.updatedAt > $1.updatedAt }
-            await syncBirthdayReminders()
+            await syncReminders()
             isReady = true
         } catch {
             errorMessage = L10n.tr("error.storage.load")
@@ -119,6 +121,8 @@ final class ContactsViewModel: ObservableObject {
         form.notes = contact.notes ?? ""
         form.tags = contact.tags.joined(separator: ", ")
         form.relationships = contact.relationships
+        form.coffeeReminderAt = contact.coffeeReminderAt
+        form.stayInTouchEveryDays = contact.stayInTouchEveryDays
         form.relationshipDraftTargetId = nil
         form.relationshipDraftType = .friend
         form.relationshipDraftIndex = nil
@@ -164,6 +168,8 @@ final class ContactsViewModel: ObservableObject {
             notes: normalizedOptional(form.notes),
             tags: parseCSV(form.tags),
             relationships: form.relationships,
+            coffeeReminderAt: normalizedFutureTimestamp(form.coffeeReminderAt),
+            stayInTouchEveryDays: normalizedReminderInterval(form.stayInTouchEveryDays),
             updatedAt: now
         )
 
@@ -187,7 +193,7 @@ final class ContactsViewModel: ObservableObject {
         do {
             try await store.saveContacts(updatedContacts)
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
-            await syncBirthdayReminders()
+            await syncReminders()
             cancelForm()
         } catch {
             errorMessage = L10n.tr("error.contact.save")
@@ -203,7 +209,7 @@ final class ContactsViewModel: ObservableObject {
         do {
             try await store.saveContacts(updatedContacts)
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
-            await syncBirthdayReminders()
+            await syncReminders()
         } catch {
             errorMessage = L10n.tr("error.contact.delete")
         }
@@ -299,7 +305,7 @@ final class ContactsViewModel: ObservableObject {
         do {
             try await store.saveContacts(updatedContacts)
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
-            await syncBirthdayReminders()
+            await syncReminders()
         } catch {
             errorMessage = L10n.tr("error.contact.import.save")
         }
@@ -326,9 +332,19 @@ final class ContactsViewModel: ObservableObject {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private func syncBirthdayReminders() async {
+    private func syncReminders() async {
         let rules = BirthdayReminderRule.loadFromDefaults()
-        await reminderService.syncBirthdays(for: contacts, rules: rules)
+        await reminderService.syncAllReminders(for: contacts, rules: rules)
+    }
+
+    private func normalizedFutureTimestamp(_ value: TimeInterval?) -> TimeInterval? {
+        guard let value else { return nil }
+        return value > Date().timeIntervalSince1970 ? value : nil
+    }
+
+    private func normalizedReminderInterval(_ value: Int?) -> Int? {
+        guard let value, value > 0 else { return nil }
+        return min(value, 365)
     }
 
     private func mappedContact(from contact: CNContact) -> ImportedContact {
@@ -404,6 +420,8 @@ final class ContactsViewModel: ObservableObject {
             notes: existing.notes,
             tags: existing.tags,
             relationships: existing.relationships,
+            coffeeReminderAt: existing.coffeeReminderAt,
+            stayInTouchEveryDays: existing.stayInTouchEveryDays,
             updatedAt: now
         )
     }
@@ -429,6 +447,8 @@ final class ContactsViewModel: ObservableObject {
             notes: nil,
             tags: [],
             relationships: [],
+            coffeeReminderAt: nil,
+            stayInTouchEveryDays: nil,
             updatedAt: now
         )
     }

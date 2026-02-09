@@ -46,6 +46,8 @@
 "contacts.card.instagram" = "Instagram";
 "contacts.card.x" = "X";
 "contacts.card.contact" = "Contact";
+"contacts.card.reminderCoffee" = "Coffee reminder";
+"contacts.card.reminderStayInTouch" = "Stay in touch every %d days";
 
 "contacts.form.addTitle" = "Add a contact";
 "contacts.form.editTitle" = "Edit contact";
@@ -80,11 +82,16 @@
 "contacts.form.section.work" = "Work";
 "contacts.form.section.channels" = "Channels";
 "contacts.form.section.personal" = "Personal";
+"contacts.form.section.reminders" = "Reminders";
 "contacts.form.relationship.contact" = "Contact";
 "contacts.form.relationship.selectContact" = "Select contact";
 "contacts.form.relationship.type" = "Type";
 "contacts.form.relationship.add" = "Add relationship";
 "contacts.form.relationship.update" = "Update relationship";
+"contacts.form.reminder.coffee" = "☕️ Coffee";
+"contacts.form.reminder.coffeeDate" = "Coffee date and time";
+"contacts.form.reminder.stayInTouch" = "🤙 Stay in touch";
+"contacts.form.reminder.stayInTouchDays" = "Every %d days";
 
 "relationship.friend" = "Friend";
 "relationship.colleague" = "Colleague";
@@ -103,6 +110,10 @@
 "events.count" = "%d contacts";
 "events.next.none" = "Next: -";
 "events.next.value" = "Next: %@";
+"events.contactReminders.title" = "Upcoming contact reminders";
+"events.contactReminders.empty" = "No coffee or stay-in-touch reminders scheduled yet.";
+"events.contactReminders.coffee" = "Coffee";
+"events.contactReminders.stayInTouch" = "Every %d days";
 
 "map.empty.title" = "No mapped contacts yet";
 "map.empty.subtitle" = "Add a living place to contacts, or allow location access to show your current position.";
@@ -159,3 +170,7 @@
 "notification.birthday.today" = "%@ has a birthday today.";
 "notification.birthday.tomorrow" = "%@ has a birthday tomorrow.";
 "notification.birthday.inDays" = "%@ has a birthday in %d days.";
+"notification.coffeeReminder.title" = "Coffee Reminder";
+"notification.coffeeReminder.body" = "Time to grab coffee with %@.";
+"notification.stayInTouchReminder.title" = "Stay in Touch";
+"notification.stayInTouchReminder.body" = "Reach out to %@. It has been %d days.";

@@ -114,6 +114,8 @@ struct Contact: Codable, Identifiable, Hashable {
     var notes: String?
     var tags: [String]
     var relationships: [ContactRelationship]
+    var coffeeReminderAt: TimeInterval?
+    var stayInTouchEveryDays: Int?
     var updatedAt: TimeInterval
 
     var displayName: String {
@@ -160,6 +162,8 @@ extension Contact {
             notes: "Loves ceramics, runs a community garden. Ask about her new studio.",
             tags: ["friend", "creative", "garden"],
             relationships: [],
+            coffeeReminderAt: nil,
+            stayInTouchEveryDays: nil,
             updatedAt: Date().timeIntervalSince1970
         ),
         Contact(
@@ -178,6 +182,8 @@ extension Contact {
             notes: "Brother. Anniversary on June 9. Favorite coffee: flat white.",
             tags: ["family", "anniversary"],
             relationships: [],
+            coffeeReminderAt: nil,
+            stayInTouchEveryDays: nil,
             updatedAt: Date().timeIntervalSince1970 - 1
         ),
     ]

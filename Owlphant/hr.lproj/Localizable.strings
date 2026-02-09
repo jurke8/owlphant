@@ -46,6 +46,8 @@
 "contacts.card.instagram" = "Instagram";
 "contacts.card.x" = "X";
 "contacts.card.contact" = "Kontakt";
+"contacts.card.reminderCoffee" = "Podsjetnik za kavu";
+"contacts.card.reminderStayInTouch" = "Ostani u kontaktu svakih %d dana";
 
 "contacts.form.addTitle" = "Dodaj kontakt";
 "contacts.form.editTitle" = "Uredi kontakt";
@@ -80,11 +82,16 @@
 "contacts.form.section.work" = "Posao";
 "contacts.form.section.channels" = "Kanali";
 "contacts.form.section.personal" = "Osobno";
+"contacts.form.section.reminders" = "Podsjetnici";
 "contacts.form.relationship.contact" = "Kontakt";
 "contacts.form.relationship.selectContact" = "Odaberi kontakt";
 "contacts.form.relationship.type" = "Vrsta";
 "contacts.form.relationship.add" = "Dodaj odnos";
 "contacts.form.relationship.update" = "Ažuriraj odnos";
+"contacts.form.reminder.coffee" = "☕️ Kava";
+"contacts.form.reminder.coffeeDate" = "Datum i vrijeme kave";
+"contacts.form.reminder.stayInTouch" = "🤙 Ostani u kontaktu";
+"contacts.form.reminder.stayInTouchDays" = "Svakih %d dana";
 
 "relationship.friend" = "Prijatelj";
 "relationship.colleague" = "Kolega";
@@ -103,6 +110,10 @@
 "events.count" = "%d kontakata";
 "events.next.none" = "Sljedeće: -";
 "events.next.value" = "Sljedeće: %@";
+"events.contactReminders.title" = "Nadolazeći podsjetnici za kontakte";
+"events.contactReminders.empty" = "Još nema zakazanih podsjetnika za kavu ili ostani u kontaktu.";
+"events.contactReminders.coffee" = "Kava";
+"events.contactReminders.stayInTouch" = "Svakih %d dana";
 
 "map.empty.title" = "Još nema mapiranih kontakata";
 "map.empty.subtitle" = "Dodaj mjesto stanovanja kontaktima ili dopusti pristup lokaciji za prikaz tvoje trenutne pozicije.";
@@ -159,3 +170,7 @@
 "notification.birthday.today" = "%@ danas ima rođendan.";
 "notification.birthday.tomorrow" = "%@ sutra ima rođendan.";
 "notification.birthday.inDays" = "%@ ima rođendan za %d dana.";
+"notification.coffeeReminder.title" = "Podsjetnik za kavu";
+"notification.coffeeReminder.body" = "Vrijeme je za kavu s %@.";
+"notification.stayInTouchReminder.title" = "Ostani u kontaktu";
+"notification.stayInTouchReminder.body" = "Javi se %@. Prošlo je %d dana.";

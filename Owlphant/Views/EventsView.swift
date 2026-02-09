@@ -3,6 +3,7 @@ import SwiftUI
 struct EventsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var reminderRules: [BirthdayReminderRule] = []
+    @State private var upcomingContactReminders: [UpcomingContactReminder] = []
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -36,6 +37,36 @@ struct EventsView: View {
                                         }
                                         Spacer()
                                         Text(nextReminderLabel(for: contact))
+                                            .multilineTextAlignment(.trailing)
+                                            .font(.system(.footnote, design: .rounded))
+                                            .foregroundStyle(AppTheme.muted)
+                                    }
+                                }
+                            }
+                        }
+
+                        SectionCard {
+                            Text(L10n.tr("events.contactReminders.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            if upcomingContactReminders.isEmpty {
+                                Text(L10n.tr("events.contactReminders.empty"))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(AppTheme.muted)
+                            } else {
+                                ForEach(upcomingContactReminders.prefix(8)) { reminder in
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(reminder.contact.displayName)
+                                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                                .foregroundStyle(AppTheme.text)
+                                            Text(reminderLabel(for: reminder))
+                                                .font(.system(.footnote, design: .rounded))
+                                                .foregroundStyle(AppTheme.muted)
+                                        }
+                                        Spacer()
+                                        Text(Self.reminderFormatter.string(from: reminder.date))
                                             .multilineTextAlignment(.trailing)
                                             .font(.system(.footnote, design: .rounded))
                                             .foregroundStyle(AppTheme.muted)
@@ -79,7 +110,17 @@ struct EventsView: View {
 
     private func refreshStatusAndSync() async {
         reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
+        await BirthdayReminderService.shared.syncAllReminders(for: viewModel.contacts, rules: reminderRules)
+        upcomingContactReminders = await BirthdayReminderService.shared.upcomingContactReminders(for: viewModel.contacts)
+    }
+
+    private func reminderLabel(for reminder: UpcomingContactReminder) -> String {
+        switch reminder.kind {
+        case .coffee:
+            return "☕️ \(L10n.tr("events.contactReminders.coffee"))"
+        case let .stayInTouch(days):
+            return "🤙 \(L10n.format("events.contactReminders.stayInTouch", days))"
+        }
     }
 
     private func displayDate(_ value: String?) -> String {

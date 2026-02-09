@@ -317,21 +317,21 @@ struct SettingsView: View {
     private func refreshStatusAndSync() async {
         authorizationStatus = await BirthdayReminderService.shared.authorizationStatus()
         reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
+        await BirthdayReminderService.shared.syncAllReminders(for: viewModel.contacts, rules: reminderRules)
     }
 
     private func addReminder(_ rule: BirthdayReminderRule) async {
         reminderRules.append(rule)
         BirthdayReminderRule.saveToDefaults(reminderRules)
         reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
+        await BirthdayReminderService.shared.syncAllReminders(for: viewModel.contacts, rules: reminderRules)
     }
 
     private func removeReminder(_ ruleID: UUID) async {
         reminderRules.removeAll { $0.id == ruleID }
         BirthdayReminderRule.saveToDefaults(reminderRules)
         reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
+        await BirthdayReminderService.shared.syncAllReminders(for: viewModel.contacts, rules: reminderRules)
     }
 
     private static func ruleSort(_ lhs: BirthdayReminderRule, _ rhs: BirthdayReminderRule) -> Bool {
