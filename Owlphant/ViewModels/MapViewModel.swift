@@ -31,16 +31,56 @@ struct ContactGroupSelection: Identifiable {
 }
 
 @MainActor
-final class MapViewModel: ObservableObject {
+final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var isLoading = false
+    @Published var isLocatingUser = false
     @Published var pins: [ContactMapPin] = []
     @Published var cameraPosition: MapCameraPosition = .automatic
+    @Published var userCoordinate: CLLocationCoordinate2D?
     @Published var selectedContact: Contact?
     @Published var selectedGroup: ContactGroupSelection?
     @Published var errorMessage: String?
 
     private let store = EncryptedContactsStore()
+    private let locationManager = CLLocationManager()
     private var locationCache: [String: CLLocationCoordinate2D] = [:]
+
+    override init() {
+        super.init()
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        requestDeviceLocation()
+    }
+
+    func requestDeviceLocation() {
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            isLocatingUser = true
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            isLocatingUser = true
+            locationManager.requestLocation()
+        case .restricted, .denied:
+            isLocatingUser = false
+            userCoordinate = nil
+        @unknown default:
+            isLocatingUser = false
+            userCoordinate = nil
+        }
+    }
+
+    func centerOnUserLocation() {
+        guard let coordinate = userCoordinate else {
+            requestDeviceLocation()
+            return
+        }
+
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
+        )
+        cameraPosition = .region(region)
+    }
 
     func reload() async {
         isLoading = true
@@ -126,22 +166,24 @@ final class MapViewModel: ObservableObject {
     }
 
     private func updateCameraPosition() {
-        guard !pins.isEmpty else {
+        let allCoordinates = pins.map(\.coordinate) + (userCoordinate.map { [$0] } ?? [])
+
+        guard !allCoordinates.isEmpty else {
             cameraPosition = .automatic
             return
         }
 
-        if pins.count == 1, let only = pins.first {
+        if allCoordinates.count == 1, let only = allCoordinates.first {
             let region = MKCoordinateRegion(
-                center: only.coordinate,
+                center: only,
                 span: MKCoordinateSpan(latitudeDelta: 0.25, longitudeDelta: 0.25)
             )
             cameraPosition = .region(region)
             return
         }
 
-        let latitudes = pins.map { $0.coordinate.latitude }
-        let longitudes = pins.map { $0.coordinate.longitude }
+        let latitudes = allCoordinates.map { $0.latitude }
+        let longitudes = allCoordinates.map { $0.longitude }
 
         guard let minLat = latitudes.min(),
               let maxLat = latitudes.max(),
@@ -165,5 +207,20 @@ final class MapViewModel: ObservableObject {
         )
 
         cameraPosition = .region(region)
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        requestDeviceLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        isLocatingUser = false
+        guard let coordinate = locations.last?.coordinate else { return }
+        userCoordinate = coordinate
+        updateCameraPosition()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        isLocatingUser = false
     }
 }

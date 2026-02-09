@@ -113,8 +113,9 @@ final class ContactsViewModel: ObservableObject {
     func save() async {
         let first = form.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let last = form.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !first.isEmpty || !last.isEmpty else {
-            errorMessage = "Please add at least a first or last name."
+        let nickname = form.nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !first.isEmpty || !last.isEmpty || !nickname.isEmpty else {
+            errorMessage = "Please add first name, last name, or nickname."
             return
         }
 

@@ -2,17 +2,13 @@ import Foundation
 
 enum RelationshipType: String, CaseIterable, Codable, Identifiable {
     case friend = "Friend"
-    case dad = "Dad"
-    case mom = "Mom"
-    case daughter = "Daughter"
-    case son = "Son"
+    case colleague = "Colleague"
+    case acquaintance = "Acquaintance"
     case parent = "Parent"
     case child = "Child"
-    case wife = "Wife"
-    case husband = "Husband"
-    case partner = "Partner"
     case sibling = "Sibling"
-    case colleague = "Colleague"
+    case spouse = "Spouse"
+    case partner = "Partner"
     case other = "Other"
 
     var id: String { rawValue }
@@ -20,15 +16,51 @@ enum RelationshipType: String, CaseIterable, Codable, Identifiable {
     var reciprocal: RelationshipType {
         switch self {
         case .friend: .friend
-        case .dad, .mom, .parent: .child
-        case .son, .daughter, .child: .parent
-        case .wife: .husband
-        case .husband: .wife
-        case .partner: .partner
-        case .sibling: .sibling
         case .colleague: .colleague
+        case .acquaintance: .acquaintance
+        case .parent: .child
+        case .child: .parent
+        case .sibling: .sibling
+        case .spouse: .spouse
+        case .partner: .partner
         case .other: .other
         }
+    }
+
+    var sortRank: Int {
+        switch self {
+        case .friend: 0
+        case .colleague: 1
+        case .acquaintance: 2
+        case .parent: 3
+        case .child: 4
+        case .sibling: 5
+        case .spouse: 6
+        case .partner: 7
+        case .other: 8
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        switch raw.lowercased() {
+        case "friend": self = .friend
+        case "parent", "dad", "mom": self = .parent
+        case "child", "daughter", "son": self = .child
+        case "spouse", "wife", "husband": self = .spouse
+        case "acquaintance": self = .acquaintance
+        case "partner": self = .partner
+        case "sibling": self = .sibling
+        case "colleague": self = .colleague
+        case "other": self = .other
+        default: self = .acquaintance
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 }
 
@@ -59,14 +91,27 @@ struct Contact: Codable, Identifiable, Hashable {
 
     var displayName: String {
         let combined = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespacesAndNewlines)
-        return combined.isEmpty ? "Unnamed Contact" : combined
+        if !combined.isEmpty {
+            return combined
+        }
+
+        let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return nick.isEmpty ? "Unnamed Contact" : nick
     }
 
     var initials: String {
         let first = firstName.first.map(String.init) ?? ""
         let last = lastName.first.map(String.init) ?? ""
         let merged = (first + last).uppercased()
-        return merged.isEmpty ? "?" : merged
+        if !merged.isEmpty {
+            return merged
+        }
+
+        let nickInitial = nickname?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .first
+            .map { String($0).uppercased() } ?? ""
+        return nickInitial.isEmpty ? "?" : nickInitial
     }
 }
 

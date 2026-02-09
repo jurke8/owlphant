@@ -86,9 +86,7 @@ actor BirthdayReminderService {
     }
 
     private func reminderBody(for contact: Contact, rule: BirthdayReminderRule) -> String {
-        let name = "\(contact.firstName) \(contact.lastName)"
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = name.isEmpty ? "This contact" : name
+        let displayName = contact.displayName == "Unnamed Contact" ? "This contact" : contact.displayName
 
         switch rule.daysBeforeBirthday {
         case 0:

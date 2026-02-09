@@ -43,6 +43,10 @@ struct ContactsView: View {
                                     ContactCardView(
                                         contact: contact,
                                         relationshipLabel: { id in viewModel.relationshipTargetName(id) },
+                                        onRelationshipTap: { relationship in
+                                            viewModel.startEdit(contact)
+                                            viewModel.editRelationship(relationship)
+                                        },
                                         onEdit: { viewModel.startEdit(contact) },
                                         onDelete: { pendingDelete = contact }
                                     )
@@ -130,6 +134,7 @@ struct ContactsView: View {
 private struct ContactCardView: View {
     let contact: Contact
     let relationshipLabel: (UUID) -> String
+    let onRelationshipTap: (ContactRelationship) -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -190,16 +195,57 @@ private struct ContactCardView: View {
             }
 
             if !contact.relationships.isEmpty {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Relationship")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Relationships")
                         .font(.system(.caption, design: .rounded).weight(.medium))
                         .textCase(.uppercase)
                         .foregroundStyle(AppTheme.muted)
-                    ForEach(contact.relationships) { relationship in
-                        Text("\(relationship.type.rawValue) · \(relationshipLabel(relationship.contactId))")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(AppTheme.text)
+                    VStack(spacing: 8) {
+                        ForEach(sortedRelationships) { relationship in
+                            Button {
+                                onRelationshipTap(relationship)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: relationship.type.symbolName)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(AppTheme.tint)
+                                        .frame(width: 24, height: 24)
+                                        .background(AppTheme.tint.opacity(0.12))
+                                        .clipShape(Circle())
+
+                                    Text(relationship.type.rawValue)
+                                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                        .foregroundStyle(AppTheme.text)
+
+                                    Text("·")
+                                        .foregroundStyle(AppTheme.muted)
+
+                                    Text(relationshipLabel(relationship.contactId))
+                                        .font(.system(.subheadline, design: .rounded))
+                                        .foregroundStyle(AppTheme.muted)
+                                        .lineLimit(1)
+
+                                    Spacer(minLength: 0)
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(AppTheme.muted.opacity(0.8))
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(AppTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
+                    .padding(10)
+                    .background(AppTheme.surfaceAlt.opacity(0.55))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(AppTheme.stroke.opacity(0.65), lineWidth: 1)
+                    )
                 }
             }
 
@@ -231,6 +277,31 @@ private struct ContactCardView: View {
                         .font(.system(.subheadline, design: .rounded).weight(.bold))
                         .foregroundStyle(AppTheme.text)
                 }
+        }
+    }
+
+    private var sortedRelationships: [ContactRelationship] {
+        contact.relationships.sorted { lhs, rhs in
+            if lhs.type.sortRank == rhs.type.sortRank {
+                return relationshipLabel(lhs.contactId) < relationshipLabel(rhs.contactId)
+            }
+            return lhs.type.sortRank < rhs.type.sortRank
+        }
+    }
+}
+
+private extension RelationshipType {
+    var symbolName: String {
+        switch self {
+        case .friend: "person.fill"
+        case .parent: "figure.2.and.child.holdinghands"
+        case .child: "figure.child"
+        case .spouse: "heart.fill"
+        case .acquaintance: "person.crop.circle.badge.questionmark"
+        case .partner: "person.2.fill"
+        case .sibling: "figure.2"
+        case .colleague: "briefcase.fill"
+        case .other: "tag.fill"
         }
     }
 }
@@ -385,11 +456,20 @@ private struct ContactFormSheet: View {
             .buttonStyle(PrimaryButtonStyle())
 
             if !viewModel.form.relationships.isEmpty {
-                ForEach(viewModel.form.relationships) { rel in
+                ForEach(sortedDraftRelationships) { rel in
                     HStack {
-                        Text("\(rel.type.rawValue) · \(viewModel.relationshipTargetName(rel.contactId))")
-                            .font(.system(.subheadline, design: .rounded))
-                            .foregroundStyle(AppTheme.text)
+                        HStack(spacing: 8) {
+                            Image(systemName: rel.type.symbolName)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(AppTheme.tint)
+                                .frame(width: 22, height: 22)
+                                .background(AppTheme.tint.opacity(0.12))
+                                .clipShape(Circle())
+                            Text("\(rel.type.rawValue) · \(viewModel.relationshipTargetName(rel.contactId))")
+                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                .foregroundStyle(AppTheme.text)
+                                .lineLimit(1)
+                        }
                         Spacer()
                         Button {
                             viewModel.editRelationship(rel)
@@ -405,8 +485,25 @@ private struct ContactFormSheet: View {
                         }
                         .buttonStyle(.borderless)
                     }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(AppTheme.surfaceAlt.opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppTheme.stroke.opacity(0.65), lineWidth: 1)
+                    )
                 }
             }
+        }
+    }
+
+    private var sortedDraftRelationships: [ContactRelationship] {
+        viewModel.form.relationships.sorted { lhs, rhs in
+            if lhs.type.sortRank == rhs.type.sortRank {
+                return viewModel.relationshipTargetName(lhs.contactId) < viewModel.relationshipTargetName(rhs.contactId)
+            }
+            return lhs.type.sortRank < rhs.type.sortRank
         }
     }
 

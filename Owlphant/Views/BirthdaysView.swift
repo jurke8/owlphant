@@ -1,11 +1,8 @@
 import SwiftUI
-import UserNotifications
 
 struct BirthdaysView: View {
     @ObservedObject var viewModel: ContactsViewModel
-    @State private var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @State private var reminderRules: [BirthdayReminderRule] = []
-    @State private var isPresentingAddReminder = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -13,77 +10,6 @@ struct BirthdaysView: View {
             ScreenBackground {
                 ScrollView {
                     VStack(spacing: 18) {
-                        if authorizationStatus == .notDetermined || authorizationStatus == .denied {
-                            SectionCard {
-                                Text("Notifications")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(AppTheme.text)
-
-                                if authorizationStatus == .notDetermined {
-                                    Text("Allow notifications to get birthday reminders.")
-                                        .font(.system(.subheadline, design: .rounded))
-                                        .foregroundStyle(AppTheme.muted)
-                                    Button("Enable notifications") {
-                                        Task {
-                                            _ = await BirthdayReminderService.shared.requestAuthorization()
-                                            await refreshStatusAndSync()
-                                        }
-                                    }
-                                    .buttonStyle(PrimaryButtonStyle())
-                                } else {
-                                    Text("Notifications are disabled. Enable them in system settings.")
-                                        .font(.system(.footnote, design: .rounded))
-                                        .foregroundStyle(AppTheme.muted)
-                                }
-                            }
-                        }
-
-                        SectionCard {
-                            HStack {
-                                Text("Birthday reminders")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(AppTheme.text)
-                                Spacer()
-                                Button {
-                                    isPresentingAddReminder = true
-                                } label: {
-                                    Label("Add reminder", systemImage: "plus")
-                                        .font(.system(.footnote, design: .rounded).weight(.semibold))
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(AppTheme.tint)
-                            }
-
-                            Text("Applies to all contacts with a birthday.")
-                                .font(.system(.footnote, design: .rounded))
-                                .foregroundStyle(AppTheme.muted)
-
-                            ForEach(reminderRules) { rule in
-                                HStack {
-                                    Text(rule.title)
-                                        .font(.system(.subheadline, design: .rounded).weight(.medium))
-                                        .foregroundStyle(AppTheme.text)
-                                    Spacer()
-                                    Button {
-                                        Task { await removeReminder(rule.id) }
-                                    } label: {
-                                        Image(systemName: "trash")
-                                            .font(.system(size: 14, weight: .semibold))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .foregroundStyle(AppTheme.muted)
-                                    .accessibilityLabel("Remove reminder")
-                                }
-                                .padding(.vertical, 2)
-                            }
-
-                            if reminderRules.isEmpty {
-                                Text("No reminders set.")
-                                    .font(.system(.subheadline, design: .rounded))
-                                    .foregroundStyle(AppTheme.muted)
-                            }
-                        }
-
                         SectionCard {
                             Text("Upcoming birthdays")
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -104,7 +30,7 @@ struct BirthdaysView: View {
                                             Text(contact.displayName)
                                                 .font(.system(.subheadline, design: .rounded).weight(.medium))
                                                 .foregroundStyle(AppTheme.text)
-                                            Text("Birthday: \(displayDate(contact.birthday))")
+                                            Text("Birthday: \(birthdayDetails(for: contact))")
                                                 .font(.system(.footnote, design: .rounded))
                                                 .foregroundStyle(AppTheme.muted)
                                         }
@@ -133,13 +59,6 @@ struct BirthdaysView: View {
             guard newValue == .active else { return }
             Task { await refreshStatusAndSync() }
         }
-        .sheet(isPresented: $isPresentingAddReminder) {
-            AddBirthdayReminderSheet(existingSignatures: Set(reminderRules.map(\.signature))) { newRule in
-                Task {
-                    await addReminder(newRule)
-                }
-            }
-        }
     }
 
     private var birthdayContacts: [Contact] {
@@ -159,21 +78,6 @@ struct BirthdaysView: View {
     }
 
     private func refreshStatusAndSync() async {
-        authorizationStatus = await BirthdayReminderService.shared.authorizationStatus()
-        reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
-    }
-
-    private func addReminder(_ rule: BirthdayReminderRule) async {
-        reminderRules.append(rule)
-        BirthdayReminderRule.saveToDefaults(reminderRules)
-        reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
-        await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
-    }
-
-    private func removeReminder(_ ruleID: UUID) async {
-        reminderRules.removeAll { $0.id == ruleID }
-        BirthdayReminderRule.saveToDefaults(reminderRules)
         reminderRules = BirthdayReminderRule.loadFromDefaults().sorted(by: Self.ruleSort)
         await BirthdayReminderService.shared.syncBirthdays(for: viewModel.contacts, rules: reminderRules)
     }
@@ -181,6 +85,29 @@ struct BirthdaysView: View {
     private func displayDate(_ value: String?) -> String {
         guard let value, let date = Self.isoFormatter.date(from: value) else { return "-" }
         return Self.displayFormatter.string(from: date)
+    }
+
+    private func birthdayDetails(for contact: Contact) -> String {
+        let dateText = displayDate(contact.birthday)
+        guard let upcomingAge = upcomingAge(for: contact) else {
+            return dateText
+        }
+        return "\(dateText) (\(upcomingAge))"
+    }
+
+    private func upcomingAge(for contact: Contact) -> Int? {
+        guard
+            let value = contact.birthday,
+            let birthday = Self.isoFormatter.date(from: value),
+            let nextBirthday = nextBirthdayDate(for: contact)
+        else {
+            return nil
+        }
+
+        let birthYear = Self.calendar.component(.year, from: birthday)
+        let nextBirthdayYear = Self.calendar.component(.year, from: nextBirthday)
+        let age = nextBirthdayYear - birthYear
+        return age > 0 ? age : nil
     }
 
     private func nextReminderLabel(for contact: Contact) -> String {
@@ -264,75 +191,4 @@ struct BirthdaysView: View {
     }()
 
     private static let calendar = Calendar.current
-}
-
-private struct AddBirthdayReminderSheet: View {
-    let existingSignatures: Set<String>
-    let onSave: (BirthdayReminderRule) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var daysBeforeBirthday = 0
-    @State private var reminderTime = AddBirthdayReminderSheet.defaultTime
-    @State private var duplicateMessage: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("When") {
-                    Stepper(value: $daysBeforeBirthday, in: 0 ... 365) {
-                        if daysBeforeBirthday == 0 {
-                            Text("On birthday")
-                        } else if daysBeforeBirthday == 1 {
-                            Text("1 day before")
-                        } else {
-                            Text("\(daysBeforeBirthday) days before")
-                        }
-                    }
-
-                    DatePicker(
-                        "Time",
-                        selection: $reminderTime,
-                        displayedComponents: [.hourAndMinute]
-                    )
-                }
-
-                if let duplicateMessage {
-                    Section {
-                        Text(duplicateMessage)
-                            .font(.system(.footnote, design: .rounded))
-                            .foregroundStyle(.red)
-                    }
-                }
-            }
-            .navigationTitle("Add reminder")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveReminder()
-                    }
-                }
-            }
-        }
-    }
-
-    private func saveReminder() {
-        let components = Self.calendar.dateComponents([.hour, .minute], from: reminderTime)
-        let hour = components.hour ?? 9
-        let minute = components.minute ?? 0
-        let newRule = BirthdayReminderRule(id: UUID(), daysBeforeBirthday: daysBeforeBirthday, hour: hour, minute: minute)
-
-        if existingSignatures.contains(newRule.signature) {
-            duplicateMessage = "This reminder already exists."
-            return
-        }
-
-        onSave(newRule)
-        dismiss()
-    }
-
-    private static let calendar = Calendar.current
-    private static let defaultTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
 }

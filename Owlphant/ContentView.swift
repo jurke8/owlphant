@@ -27,7 +27,7 @@ struct ContentView: View {
                     Label("Map", systemImage: "map.fill")
                 }
 
-            SettingsView()
+            SettingsView(viewModel: contactsViewModel)
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }

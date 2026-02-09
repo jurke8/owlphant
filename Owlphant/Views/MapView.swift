@@ -6,31 +6,24 @@ struct PeopleMapView: View {
 
     var body: some View {
         NavigationStack {
-            ScreenBackground {
-                VStack(spacing: 14) {
-                    SectionCard {
-                        if viewModel.pins.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("No mapped contacts yet")
-                                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(AppTheme.text)
-                                Text("Add a living place to contacts and refresh to see them here.")
-                                    .font(.system(.body, design: .rounded))
-                                    .foregroundStyle(AppTheme.muted)
-                            }
-                        } else {
-                            mapView
-                                .frame(height: 460)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(AppTheme.stroke, lineWidth: 1)
-                                )
+            Group {
+                if viewModel.pins.isEmpty && viewModel.userCoordinate == nil {
+                    ScreenBackground {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("No mapped contacts yet")
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+                            Text("Add a living place to contacts, or allow location access to show your current position.")
+                                .font(.system(.body, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
                         }
+                        .padding(20)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     }
+                } else {
+                    mapView
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .padding(20)
-                .padding(.bottom, 10)
             }
             .navigationTitle("Map")
             .navigationBarTitleDisplayMode(.inline)
@@ -61,6 +54,8 @@ struct PeopleMapView: View {
 
     private var mapView: some View {
         Map(position: $viewModel.cameraPosition, interactionModes: [.all]) {
+            UserAnnotation()
+
             ForEach(viewModel.pins) { pin in
                 Annotation("", coordinate: pin.coordinate, anchor: .bottom) {
                     mapPinView(pin)
@@ -71,11 +66,40 @@ struct PeopleMapView: View {
             MapCompass()
             MapScaleView()
             MapPitchToggle()
+            MapUserLocationButton()
         }
-        .overlay(alignment: .topTrailing) {
-            mapResetButton
-                .padding(12)
+        .safeAreaInset(edge: .bottom) {
+            HStack {
+                Spacer()
+                centerOnUserButton
+                mapResetButton
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
         }
+    }
+
+    private var centerOnUserButton: some View {
+        Button {
+            viewModel.centerOnUserLocation()
+        } label: {
+            Group {
+                if viewModel.isLocatingUser {
+                    ProgressView()
+                        .tint(AppTheme.tint)
+                } else {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppTheme.text)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().stroke(AppTheme.stroke, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isLocatingUser)
+        .accessibilityLabel("Center map on current location")
     }
 
     private var mapResetButton: some View {
