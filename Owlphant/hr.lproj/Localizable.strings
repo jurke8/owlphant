@@ -33,6 +33,7 @@
 "contacts.header.savedCount" = "%d spremljeno";
 "contacts.unnamed" = "Neimenovani kontakt";
 "contacts.unknown" = "Nepoznat kontakt";
+"contacts.import.button" = "Uvezi iz adresara";
 
 "contacts.card.livesIn" = "Živi u %@";
 "contacts.card.livesIn.label" = "Živi u";
@@ -40,6 +41,10 @@
 "contacts.card.work" = "Posao";
 "contacts.card.phones" = "Telefoni";
 "contacts.card.emails" = "E-pošta";
+"contacts.card.facebook" = "Facebook";
+"contacts.card.linkedin" = "LinkedIn";
+"contacts.card.instagram" = "Instagram";
+"contacts.card.x" = "X";
 "contacts.card.contact" = "Kontakt";
 
 "contacts.form.addTitle" = "Dodaj kontakt";
@@ -61,6 +66,10 @@
 "contacts.form.workPosition" = "Radno mjesto";
 "contacts.form.phones" = "Telefoni (odvojeni zarezom)";
 "contacts.form.emails" = "E-pošta (odvojena zarezom)";
+"contacts.form.facebook" = "Facebook (odvojen zarezom)";
+"contacts.form.linkedin" = "LinkedIn (odvojen zarezom)";
+"contacts.form.instagram" = "Instagram (odvojen zarezom)";
+"contacts.form.x" = "X (odvojen zarezom)";
 "contacts.form.tags" = "Oznake (odvojene zarezom)";
 "contacts.form.notes" = "Bilješke";
 "contacts.form.save" = "Spremi kontakt";
@@ -69,7 +78,7 @@
 "contacts.form.section.basicInfo" = "Osnovne informacije";
 "contacts.form.section.location" = "Lokacija";
 "contacts.form.section.work" = "Posao";
-"contacts.form.section.channels" = "Kanali kontakta";
+"contacts.form.section.channels" = "Kanali";
 "contacts.form.section.personal" = "Osobno";
 "contacts.form.relationship.contact" = "Kontakt";
 "contacts.form.relationship.selectContact" = "Odaberi kontakt";
@@ -118,6 +127,8 @@
 "settings.notifications.disabled" = "Obavijesti su isključene. Uključi ih u postavkama sustava.";
 "settings.notifications.notEnabled" = "Obavijesti još nisu uključene.";
 "settings.notifications.unavailable" = "Status obavijesti nije dostupan.";
+"settings.import.title" = "Uvoz kontakata";
+"settings.import.subtitle" = "Uvezi iz adresara i spoji prema podudaranju e-pošte ili telefona.";
 
 "settings.addReminder.title" = "Dodaj podsjetnik";
 "settings.addReminder.when" = "Kada";
@@ -138,6 +149,8 @@
 "error.contact.missingName" = "Dodaj ime, prezime ili nadimak.";
 "error.contact.save" = "Nije moguće spremiti kontakt.";
 "error.contact.delete" = "Nije moguće izbrisati kontakt.";
+"error.contact.import.permission" = "Za uvoz iz adresara potreban je pristup kontaktima.";
+"error.contact.import.save" = "Nije moguće uvesti kontakte iz adresara.";
 "error.map.resolve" = "Trenutno nije moguće mapirati spremljena mjesta stanovanja. Pokušaj ponovno uskoro.";
 "error.map.load" = "Nije moguće učitati kontakte za prikaz karte.";
 

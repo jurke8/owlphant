@@ -353,8 +353,13 @@ private struct MapContactDetailsView: View {
                             }
                         }
 
-                        if !contact.phones.isEmpty || !contact.emails.isEmpty {
+                        if !contact.phones.isEmpty || !contact.emails.isEmpty || !(contact.facebook ?? []).isEmpty || !(contact.linkedin ?? []).isEmpty || !(contact.instagram ?? []).isEmpty || !(contact.x ?? []).isEmpty {
                             SectionCard {
+                                Text(L10n.tr("contacts.form.section.channels"))
+                                    .font(.system(.caption, design: .rounded).weight(.medium))
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(AppTheme.muted)
+
                                 if !contact.phones.isEmpty {
                                     Text(L10n.tr("contacts.card.phones"))
                                         .font(.system(.caption, design: .rounded).weight(.medium))
@@ -375,6 +380,58 @@ private struct MapContactDetailsView: View {
                                         .padding(.top, contact.phones.isEmpty ? 0 : 6)
                                     ForEach(contact.emails, id: \.self) { email in
                                         Text(email)
+                                            .font(.system(.body, design: .rounded))
+                                            .foregroundStyle(AppTheme.text)
+                                    }
+                                }
+
+                                if let facebook = contact.facebook, !facebook.isEmpty {
+                                    Text(L10n.tr("contacts.card.facebook"))
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(AppTheme.muted)
+                                        .padding(.top, (!contact.phones.isEmpty || !contact.emails.isEmpty) ? 6 : 0)
+                                    ForEach(facebook, id: \.self) { handle in
+                                        Text(handle)
+                                            .font(.system(.body, design: .rounded))
+                                            .foregroundStyle(AppTheme.text)
+                                    }
+                                }
+
+                                if let linkedin = contact.linkedin, !linkedin.isEmpty {
+                                    Text(L10n.tr("contacts.card.linkedin"))
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(AppTheme.muted)
+                                        .padding(.top, 6)
+                                    ForEach(linkedin, id: \.self) { handle in
+                                        Text(handle)
+                                            .font(.system(.body, design: .rounded))
+                                            .foregroundStyle(AppTheme.text)
+                                    }
+                                }
+
+                                if let instagram = contact.instagram, !instagram.isEmpty {
+                                    Text(L10n.tr("contacts.card.instagram"))
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(AppTheme.muted)
+                                        .padding(.top, 6)
+                                    ForEach(instagram, id: \.self) { handle in
+                                        Text(handle)
+                                            .font(.system(.body, design: .rounded))
+                                            .foregroundStyle(AppTheme.text)
+                                    }
+                                }
+
+                                if let xHandles = contact.x, !xHandles.isEmpty {
+                                    Text(L10n.tr("contacts.card.x"))
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(AppTheme.muted)
+                                        .padding(.top, 6)
+                                    ForEach(xHandles, id: \.self) { handle in
+                                        Text(handle)
                                             .font(.system(.body, design: .rounded))
                                             .foregroundStyle(AppTheme.text)
                                     }

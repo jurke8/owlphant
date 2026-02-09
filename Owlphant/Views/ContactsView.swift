@@ -367,7 +367,9 @@ private struct ContactFormSheet: View {
                                 Picker(L10n.tr("contacts.form.birthdayMonth"), selection: $birthdayMonth) {
                                     Text("-").tag(Optional<Int>.none)
                                     ForEach(Array(Self.monthLabels.enumerated()), id: \.offset) { idx, label in
-                                        Text(label).tag(Optional(idx + 1))
+                                        Text(label)
+                                            .lineLimit(1)
+                                            .tag(Optional(idx + 1))
                                     }
                                 }
                                 .pickerStyle(.menu)
@@ -405,6 +407,18 @@ private struct ContactFormSheet: View {
                             TextField(L10n.tr("contacts.form.emails"), text: binding(\.emails))
                                 .textInputAutocapitalization(.never)
                                 .keyboardType(.emailAddress)
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.facebook"), text: binding(\.facebook))
+                                .textInputAutocapitalization(.never)
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.linkedin"), text: binding(\.linkedin))
+                                .textInputAutocapitalization(.never)
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.instagram"), text: binding(\.instagram))
+                                .textInputAutocapitalization(.never)
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.x"), text: binding(\.x))
+                                .textInputAutocapitalization(.never)
                                 .appInputChrome()
                         }
 
@@ -636,7 +650,7 @@ private struct ContactFormSheet: View {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.locale = Locale.current
-        return formatter.monthSymbols
+        return formatter.shortStandaloneMonthSymbols ?? formatter.shortMonthSymbols
     }
 
     private static var yearOptions: [Int] {

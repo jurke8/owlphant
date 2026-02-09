@@ -107,6 +107,10 @@ struct Contact: Codable, Identifiable, Hashable {
     var workPosition: String?
     var phones: [String]
     var emails: [String]
+    var facebook: [String]? = nil
+    var linkedin: [String]? = nil
+    var instagram: [String]? = nil
+    var x: [String]? = nil
     var notes: String?
     var tags: [String]
     var relationships: [ContactRelationship]

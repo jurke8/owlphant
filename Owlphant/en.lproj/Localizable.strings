@@ -33,6 +33,7 @@
 "contacts.header.savedCount" = "%d saved";
 "contacts.unnamed" = "Unnamed Contact";
 "contacts.unknown" = "Unknown contact";
+"contacts.import.button" = "Import from address book";
 
 "contacts.card.livesIn" = "Lives in %@";
 "contacts.card.livesIn.label" = "Lives in";
@@ -40,6 +41,10 @@
 "contacts.card.work" = "Work";
 "contacts.card.phones" = "Phones";
 "contacts.card.emails" = "Emails";
+"contacts.card.facebook" = "Facebook";
+"contacts.card.linkedin" = "LinkedIn";
+"contacts.card.instagram" = "Instagram";
+"contacts.card.x" = "X";
 "contacts.card.contact" = "Contact";
 
 "contacts.form.addTitle" = "Add a contact";
@@ -61,6 +66,10 @@
 "contacts.form.workPosition" = "Work position";
 "contacts.form.phones" = "Phones (comma separated)";
 "contacts.form.emails" = "Emails (comma separated)";
+"contacts.form.facebook" = "Facebook (comma separated)";
+"contacts.form.linkedin" = "LinkedIn (comma separated)";
+"contacts.form.instagram" = "Instagram (comma separated)";
+"contacts.form.x" = "X (comma separated)";
 "contacts.form.tags" = "Tags (comma separated)";
 "contacts.form.notes" = "Notes";
 "contacts.form.save" = "Save contact";
@@ -69,7 +78,7 @@
 "contacts.form.section.basicInfo" = "Basic info";
 "contacts.form.section.location" = "Location";
 "contacts.form.section.work" = "Work";
-"contacts.form.section.channels" = "Contact channels";
+"contacts.form.section.channels" = "Channels";
 "contacts.form.section.personal" = "Personal";
 "contacts.form.relationship.contact" = "Contact";
 "contacts.form.relationship.selectContact" = "Select contact";
@@ -118,6 +127,8 @@
 "settings.notifications.disabled" = "Notifications are disabled. Enable them in system settings.";
 "settings.notifications.notEnabled" = "Notifications are not enabled yet.";
 "settings.notifications.unavailable" = "Notification status unavailable.";
+"settings.import.title" = "Import contacts";
+"settings.import.subtitle" = "Import from your address book and merge by matching email or phone.";
 
 "settings.addReminder.title" = "Add reminder";
 "settings.addReminder.when" = "When";
@@ -138,6 +149,8 @@
 "error.contact.missingName" = "Please add first name, last name, or nickname.";
 "error.contact.save" = "Could not save contact.";
 "error.contact.delete" = "Could not delete contact.";
+"error.contact.import.permission" = "Contacts access is needed to import from your address book.";
+"error.contact.import.save" = "Could not import contacts from your address book.";
 "error.map.resolve" = "Could not map saved living places yet. Try again in a moment.";
 "error.map.load" = "Could not load contacts for map view.";
 

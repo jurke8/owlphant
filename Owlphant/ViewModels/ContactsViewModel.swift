@@ -1,4 +1,5 @@
 import Combine
+import Contacts
 import Foundation
 
 struct ContactFormState {
@@ -13,6 +14,10 @@ struct ContactFormState {
     var workPosition = ""
     var phones = ""
     var emails = ""
+    var facebook = ""
+    var linkedin = ""
+    var instagram = ""
+    var x = ""
     var notes = ""
     var tags = ""
 
@@ -40,6 +45,15 @@ final class ContactsViewModel: ObservableObject {
         guard !trimmed.isEmpty else { return contacts.sorted { $0.updatedAt > $1.updatedAt } }
 
         return contacts.filter { contact in
+            let channelText = [
+                contact.emails.joined(separator: " "),
+                contact.phones.joined(separator: " "),
+                (contact.facebook ?? []).joined(separator: " "),
+                (contact.linkedin ?? []).joined(separator: " "),
+                (contact.instagram ?? []).joined(separator: " "),
+                (contact.x ?? []).joined(separator: " "),
+            ].joined(separator: " ")
+
             let haystack = [
                 contact.firstName,
                 contact.lastName,
@@ -49,8 +63,7 @@ final class ContactsViewModel: ObservableObject {
                 contact.placeOfLiving ?? "",
                 contact.company ?? "",
                 contact.workPosition ?? "",
-                contact.emails.joined(separator: " "),
-                contact.phones.joined(separator: " "),
+                channelText,
                 contact.notes ?? "",
                 contact.tags.joined(separator: " "),
             ].joined(separator: " ").lowercased()
@@ -99,6 +112,10 @@ final class ContactsViewModel: ObservableObject {
         form.workPosition = contact.workPosition ?? ""
         form.phones = contact.phones.joined(separator: ", ")
         form.emails = contact.emails.joined(separator: ", ")
+        form.facebook = (contact.facebook ?? []).joined(separator: ", ")
+        form.linkedin = (contact.linkedin ?? []).joined(separator: ", ")
+        form.instagram = (contact.instagram ?? []).joined(separator: ", ")
+        form.x = (contact.x ?? []).joined(separator: ", ")
         form.notes = contact.notes ?? ""
         form.tags = contact.tags.joined(separator: ", ")
         form.relationships = contact.relationships
@@ -140,6 +157,10 @@ final class ContactsViewModel: ObservableObject {
             workPosition: normalizedOptional(form.workPosition),
             phones: parseCSV(form.phones),
             emails: parseCSV(form.emails),
+            facebook: parseOptionalCSV(form.facebook),
+            linkedin: parseOptionalCSV(form.linkedin),
+            instagram: parseOptionalCSV(form.instagram),
+            x: parseOptionalCSV(form.x),
             notes: normalizedOptional(form.notes),
             tags: parseCSV(form.tags),
             relationships: form.relationships,
@@ -220,6 +241,70 @@ final class ContactsViewModel: ObservableObject {
         contacts.first(where: { $0.id == id })?.displayName ?? L10n.tr("contacts.unknown")
     }
 
+    func requestAddressBookAccess() async -> Bool {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        switch status {
+        case .authorized:
+            return true
+        case .limited:
+            return true
+        case .notDetermined:
+            let store = CNContactStore()
+            do {
+                let granted: Bool = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Bool, Error>) in
+                    store.requestAccess(for: .contacts) { granted, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume(returning: granted)
+                        }
+                    }
+                }
+                if !granted {
+                    errorMessage = L10n.tr("error.contact.import.permission")
+                }
+                return granted
+            } catch {
+                errorMessage = L10n.tr("error.contact.import.permission")
+                return false
+            }
+        case .denied, .restricted:
+            errorMessage = L10n.tr("error.contact.import.permission")
+            return false
+        @unknown default:
+            errorMessage = L10n.tr("error.contact.import.permission")
+            return false
+        }
+    }
+
+    func importFromAddressBook(_ importedContacts: [CNContact]) async {
+        guard !importedContacts.isEmpty else { return }
+
+        var updatedContacts = contacts
+        let now = Date().timeIntervalSince1970
+
+        for imported in importedContacts {
+            let mapped = mappedContact(from: imported)
+            guard mapped.hasAnyContent else { continue }
+
+            if let matchIndex = bestMatchIndex(for: mapped, in: updatedContacts) {
+                updatedContacts[matchIndex] = merge(existing: updatedContacts[matchIndex], with: mapped, now: now)
+            } else {
+                updatedContacts.append(newContact(from: mapped, now: now))
+            }
+        }
+
+        guard updatedContacts != contacts else { return }
+
+        do {
+            try await store.saveContacts(updatedContacts)
+            contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncBirthdayReminders()
+        } catch {
+            errorMessage = L10n.tr("error.contact.import.save")
+        }
+    }
+
     var availableRelationshipTargets: [Contact] {
         contacts.filter { $0.id != selectedContactId }.sorted { $0.displayName < $1.displayName }
     }
@@ -231,6 +316,11 @@ final class ContactsViewModel: ObservableObject {
             .filter { !$0.isEmpty }
     }
 
+    private func parseOptionalCSV(_ value: String) -> [String]? {
+        let parsed = parseCSV(value)
+        return parsed.isEmpty ? nil : parsed
+    }
+
     private func normalizedOptional(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
@@ -239,5 +329,166 @@ final class ContactsViewModel: ObservableObject {
     private func syncBirthdayReminders() async {
         let rules = BirthdayReminderRule.loadFromDefaults()
         await reminderService.syncBirthdays(for: contacts, rules: rules)
+    }
+
+    private func mappedContact(from contact: CNContact) -> ImportedContact {
+        let firstName = contact.givenName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lastName = contact.familyName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nickname = normalizedOptional(contact.nickname)
+
+        let emailValues = deduplicated(values: contact.emailAddresses.map { $0.value as String }, normalizer: normalizedEmail)
+        let phoneValues = deduplicated(values: contact.phoneNumbers.map { $0.value.stringValue }, normalizer: normalizedPhone)
+
+        return ImportedContact(
+            firstName: firstName,
+            lastName: lastName,
+            nickname: nickname,
+            emails: emailValues,
+            phones: phoneValues,
+            normalizedEmails: Set(emailValues.compactMap { normalizedKey($0, using: normalizedEmail) }),
+            normalizedPhones: Set(phoneValues.compactMap { normalizedKey($0, using: normalizedPhone) })
+        )
+    }
+
+    private func bestMatchIndex(for imported: ImportedContact, in existingContacts: [Contact]) -> Int? {
+        var bestIndex: Int?
+        var bestScore = 0
+        var bestUpdatedAt: TimeInterval = 0
+
+        for idx in existingContacts.indices {
+            let existing = existingContacts[idx]
+            let existingEmails = Set(existing.emails.compactMap { normalizedKey($0, using: normalizedEmail) })
+            let existingPhones = Set(existing.phones.compactMap { normalizedKey($0, using: normalizedPhone) })
+
+            let emailOverlap = imported.normalizedEmails.intersection(existingEmails).count
+            let phoneOverlap = imported.normalizedPhones.intersection(existingPhones).count
+            let score = emailOverlap + phoneOverlap
+
+            guard score > 0 else { continue }
+
+            if score > bestScore || (score == bestScore && existing.updatedAt > bestUpdatedAt) {
+                bestScore = score
+                bestUpdatedAt = existing.updatedAt
+                bestIndex = idx
+            }
+        }
+
+        return bestIndex
+    }
+
+    private func merge(existing: Contact, with imported: ImportedContact, now: TimeInterval) -> Contact {
+        let mergedEmails = mergedValues(existing.emails, imported.emails, normalizer: normalizedEmail)
+        let mergedPhones = mergedValues(existing.phones, imported.phones, normalizer: normalizedPhone)
+
+        let existingFirst = existing.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let existingLast = existing.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let existingNick = existing.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        return Contact(
+            id: existing.id,
+            firstName: existingFirst.isEmpty ? imported.firstName : existing.firstName,
+            lastName: existingLast.isEmpty ? imported.lastName : existing.lastName,
+            nickname: existingNick.isEmpty ? imported.nickname : existing.nickname,
+            birthday: existing.birthday,
+            photoDataBase64: existing.photoDataBase64,
+            placeOfBirth: existing.placeOfBirth,
+            placeOfLiving: existing.placeOfLiving,
+            company: existing.company,
+            workPosition: existing.workPosition,
+            phones: mergedPhones,
+            emails: mergedEmails,
+            facebook: existing.facebook,
+            linkedin: existing.linkedin,
+            instagram: existing.instagram,
+            x: existing.x,
+            notes: existing.notes,
+            tags: existing.tags,
+            relationships: existing.relationships,
+            updatedAt: now
+        )
+    }
+
+    private func newContact(from imported: ImportedContact, now: TimeInterval) -> Contact {
+        Contact(
+            id: UUID(),
+            firstName: imported.firstName,
+            lastName: imported.lastName,
+            nickname: imported.nickname,
+            birthday: nil,
+            photoDataBase64: nil,
+            placeOfBirth: nil,
+            placeOfLiving: nil,
+            company: nil,
+            workPosition: nil,
+            phones: imported.phones,
+            emails: imported.emails,
+            facebook: nil,
+            linkedin: nil,
+            instagram: nil,
+            x: nil,
+            notes: nil,
+            tags: [],
+            relationships: [],
+            updatedAt: now
+        )
+    }
+
+    private func mergedValues(_ existing: [String], _ incoming: [String], normalizer: (String) -> String) -> [String] {
+        var result = existing
+        var seen = Set(existing.compactMap { normalizedKey($0, using: normalizer) })
+
+        for value in incoming {
+            guard let key = normalizedKey(value, using: normalizer), !seen.contains(key) else { continue }
+            seen.insert(key)
+            result.append(value)
+        }
+
+        return result
+    }
+
+    private func deduplicated(values: [String], normalizer: (String) -> String) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+
+        for value in values {
+            guard let key = normalizedKey(value, using: normalizer), !seen.contains(key) else { continue }
+            seen.insert(key)
+            result.append(value.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        return result
+    }
+
+    private func normalizedKey(_ value: String, using normalizer: (String) -> String) -> String? {
+        let normalized = normalizer(value)
+        return normalized.isEmpty ? nil : normalized
+    }
+
+    private func normalizedEmail(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private func normalizedPhone(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        let hasLeadingPlus = trimmed.first == "+"
+        let digits = trimmed.filter { $0.isWholeNumber }
+        guard !digits.isEmpty else { return "" }
+        return hasLeadingPlus ? "+\(digits)" : digits
+    }
+}
+
+private struct ImportedContact {
+    let firstName: String
+    let lastName: String
+    let nickname: String?
+    let emails: [String]
+    let phones: [String]
+    let normalizedEmails: Set<String>
+    let normalizedPhones: Set<String>
+
+    var hasAnyContent: Bool {
+        !firstName.isEmpty || !lastName.isEmpty || !(nickname ?? "").isEmpty || !emails.isEmpty || !phones.isEmpty
     }
 }

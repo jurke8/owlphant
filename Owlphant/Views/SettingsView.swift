@@ -1,3 +1,5 @@
+import Contacts
+import ContactsUI
 import SwiftUI
 import UserNotifications
 
@@ -8,6 +10,7 @@ struct SettingsView: View {
     @State private var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @State private var reminderRules: [BirthdayReminderRule] = []
     @State private var isPresentingAddReminder = false
+    @State private var isPresentingAddressBookPicker = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var appearanceMode: AppearanceMode {
@@ -130,6 +133,25 @@ struct SettingsView: View {
                         }
 
                         SectionCard {
+                            Text(L10n.tr("settings.import.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            Text(L10n.tr("settings.import.subtitle"))
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+
+                            Button(L10n.tr("contacts.import.button")) {
+                                Task {
+                                    if await viewModel.requestAddressBookAccess() {
+                                        isPresentingAddressBookPicker = true
+                                    }
+                                }
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                        }
+
+                        SectionCard {
                             Text(L10n.tr("settings.encryption.note"))
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
@@ -159,6 +181,17 @@ struct SettingsView: View {
                     await addReminder(newRule)
                 }
             }
+        }
+        .sheet(isPresented: $isPresentingAddressBookPicker) {
+            AddressBookContactPicker(
+                onCancel: { isPresentingAddressBookPicker = false },
+                onSelect: { contacts in
+                    isPresentingAddressBookPicker = false
+                    Task {
+                        await viewModel.importFromAddressBook(contacts)
+                    }
+                }
+            )
         }
     }
 
@@ -309,6 +342,45 @@ struct SettingsView: View {
             return lhs.hour < rhs.hour
         }
         return lhs.minute < rhs.minute
+    }
+}
+
+private struct AddressBookContactPicker: UIViewControllerRepresentable {
+    let onCancel: () -> Void
+    let onSelect: ([CNContact]) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCancel: onCancel, onSelect: onSelect)
+    }
+
+    func makeUIViewController(context: Context) -> CNContactPickerViewController {
+        let picker = CNContactPickerViewController()
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: CNContactPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, CNContactPickerDelegate {
+        private let onCancel: () -> Void
+        private let onSelect: ([CNContact]) -> Void
+
+        init(onCancel: @escaping () -> Void, onSelect: @escaping ([CNContact]) -> Void) {
+            self.onCancel = onCancel
+            self.onSelect = onSelect
+        }
+
+        func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
+            onCancel()
+        }
+
+        func contactPicker(_ picker: CNContactPickerViewController, didSelect contact: CNContact) {
+            onSelect([contact])
+        }
+
+        func contactPicker(_ picker: CNContactPickerViewController, didSelect contacts: [CNContact]) {
+            onSelect(contacts)
+        }
     }
 }
 
