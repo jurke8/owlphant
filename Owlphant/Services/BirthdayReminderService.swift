@@ -21,7 +21,7 @@ actor BirthdayReminderService {
         return settings.authorizationStatus
     }
 
-    func syncBirthdays(for contacts: [Contact], timing: BirthdayReminderTiming) async {
+    func syncBirthdays(for contacts: [Contact], rules: [BirthdayReminderRule]) async {
         let status = await authorizationStatus()
         guard isAuthorizedStatus(status) else {
             return
@@ -34,24 +34,26 @@ actor BirthdayReminderService {
         }
 
         for contact in contacts {
-            guard let components = reminderComponents(for: contact, timing: timing) else { continue }
+            for rule in rules {
+                guard let components = reminderComponents(for: contact, rule: rule) else { continue }
 
-            let content = UNMutableNotificationContent()
-            content.title = "Birthday Reminder"
-            content.body = reminderBody(for: contact, timing: timing)
-            content.sound = .default
+                let content = UNMutableNotificationContent()
+                content.title = "Birthday Reminder"
+                content.body = reminderBody(for: contact, rule: rule)
+                content.sound = .default
 
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            let request = UNNotificationRequest(
-                identifier: notificationIdentifier(for: contact.id),
-                content: content,
-                trigger: trigger
-            )
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+                let request = UNNotificationRequest(
+                    identifier: notificationIdentifier(for: contact.id, ruleID: rule.id),
+                    content: content,
+                    trigger: trigger
+                )
 
-            do {
-                try await center.add(request)
-            } catch {
-                continue
+                do {
+                    try await center.add(request)
+                } catch {
+                    continue
+                }
             }
         }
     }
@@ -67,8 +69,8 @@ actor BirthdayReminderService {
         }
     }
 
-    private func notificationIdentifier(for id: UUID) -> String {
-        "\(notificationPrefix)\(id.uuidString)"
+    private func notificationIdentifier(for contactID: UUID, ruleID: UUID) -> String {
+        "\(notificationPrefix)\(contactID.uuidString).\(ruleID.uuidString)"
     }
 
     private func isAuthorizedStatus(_ status: UNAuthorizationStatus) -> Bool {
@@ -83,20 +85,22 @@ actor BirthdayReminderService {
         return false
     }
 
-    private func reminderBody(for contact: Contact, timing: BirthdayReminderTiming) -> String {
+    private func reminderBody(for contact: Contact, rule: BirthdayReminderRule) -> String {
         let name = "\(contact.firstName) \(contact.lastName)"
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = name.isEmpty ? "This contact" : name
 
-        switch timing {
-        case .onBirthdayAt9AM:
+        switch rule.daysBeforeBirthday {
+        case 0:
             return "\(displayName) has a birthday today."
-        case .dayBeforeAt9AM, .dayBeforeAt2PM:
+        case 1:
             return "\(displayName) has a birthday tomorrow."
+        default:
+            return "\(displayName) has a birthday in \(rule.daysBeforeBirthday) days."
         }
     }
 
-    private func reminderComponents(for contact: Contact, timing: BirthdayReminderTiming) -> DateComponents? {
+    private func reminderComponents(for contact: Contact, rule: BirthdayReminderRule) -> DateComponents? {
         guard
             let birthday = contact.birthday?.trimmingCharacters(in: .whitespacesAndNewlines),
             !birthday.isEmpty,
@@ -108,21 +112,16 @@ actor BirthdayReminderService {
         let source = calendar.dateComponents([.month, .day], from: baseDate)
         guard let month = source.month, let day = source.day else { return nil }
 
-        switch timing {
-        case .onBirthdayAt9AM:
-            return DateComponents(month: month, day: day, hour: 9, minute: 0)
-        case .dayBeforeAt9AM, .dayBeforeAt2PM:
-            guard
-                let fixedDate = calendar.date(from: DateComponents(year: 2001, month: month, day: day)),
-                let dayBefore = calendar.date(byAdding: .day, value: -1, to: fixedDate)
-            else {
-                return nil
-            }
-            let shifted = calendar.dateComponents([.month, .day], from: dayBefore)
-            guard let shiftedMonth = shifted.month, let shiftedDay = shifted.day else { return nil }
-            let hour = timing == .dayBeforeAt2PM ? 14 : 9
-            return DateComponents(month: shiftedMonth, day: shiftedDay, hour: hour, minute: 0)
+        guard
+            let fixedDate = calendar.date(from: DateComponents(year: 2001, month: month, day: day)),
+            let shiftedDate = calendar.date(byAdding: .day, value: -rule.daysBeforeBirthday, to: fixedDate)
+        else {
+            return nil
         }
+
+        let shifted = calendar.dateComponents([.month, .day], from: shiftedDate)
+        guard let shiftedMonth = shifted.month, let shiftedDay = shifted.day else { return nil }
+        return DateComponents(month: shiftedMonth, day: shiftedDay, hour: rule.hour, minute: rule.minute)
     }
 
     private static let isoFormatter: DateFormatter = {

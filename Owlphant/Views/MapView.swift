@@ -9,24 +9,6 @@ struct PeopleMapView: View {
             ScreenBackground {
                 VStack(spacing: 14) {
                     SectionCard {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Map")
-                                    .font(.system(size: 30, weight: .bold, design: .serif))
-                                    .foregroundStyle(AppTheme.text)
-                                Text("Tap a person on the map to open their details.")
-                                    .font(.system(.subheadline, design: .rounded))
-                                    .foregroundStyle(AppTheme.muted)
-                            }
-                            Spacer()
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .tint(AppTheme.tint)
-                            }
-                        }
-                    }
-
-                    SectionCard {
                         if viewModel.pins.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("No mapped contacts yet")
@@ -52,16 +34,6 @@ struct PeopleMapView: View {
             }
             .navigationTitle("Map")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        Task { await viewModel.reload() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .foregroundStyle(AppTheme.tint)
-                    }
-                }
-            }
         }
         .task {
             await viewModel.reload()
@@ -100,6 +72,33 @@ struct PeopleMapView: View {
             MapScaleView()
             MapPitchToggle()
         }
+        .overlay(alignment: .topTrailing) {
+            mapResetButton
+                .padding(12)
+        }
+    }
+
+    private var mapResetButton: some View {
+        Button {
+            Task { await viewModel.reload() }
+        } label: {
+            Group {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .tint(AppTheme.tint)
+                } else {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppTheme.text)
+                }
+            }
+            .frame(width: 36, height: 36)
+            .background(.ultraThinMaterial, in: Circle())
+            .overlay(Circle().stroke(AppTheme.stroke, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(viewModel.isLoading)
+        .accessibilityLabel("Reset map to initial view")
     }
 
     @ViewBuilder

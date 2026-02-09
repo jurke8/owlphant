@@ -17,9 +17,9 @@ struct ContentView: View {
                     Label("Contacts", systemImage: "person.2.fill")
                 }
 
-            RemindersView(viewModel: contactsViewModel)
+            BirthdaysView(viewModel: contactsViewModel)
                 .tabItem {
-                    Label("Reminders", systemImage: "bell.fill")
+                    Label("Birthdays", systemImage: "bell.fill")
                 }
 
             PeopleMapView()

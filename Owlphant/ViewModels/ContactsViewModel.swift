@@ -232,8 +232,7 @@ final class ContactsViewModel: ObservableObject {
     }
 
     private func syncBirthdayReminders() async {
-        let timingRaw = UserDefaults.standard.string(forKey: BirthdayReminderTiming.storageKey) ?? BirthdayReminderTiming.defaultValue.rawValue
-        let timing = BirthdayReminderTiming.fromStored(timingRaw)
-        await reminderService.syncBirthdays(for: contacts, timing: timing)
+        let rules = BirthdayReminderRule.loadFromDefaults()
+        await reminderService.syncBirthdays(for: contacts, rules: rules)
     }
 }
