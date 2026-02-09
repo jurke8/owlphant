@@ -41,6 +41,29 @@ enum RelationshipType: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    var localizedTitle: String {
+        switch self {
+        case .friend:
+            return L10n.tr("relationship.friend")
+        case .colleague:
+            return L10n.tr("relationship.colleague")
+        case .acquaintance:
+            return L10n.tr("relationship.acquaintance")
+        case .parent:
+            return L10n.tr("relationship.parent")
+        case .child:
+            return L10n.tr("relationship.child")
+        case .sibling:
+            return L10n.tr("relationship.sibling")
+        case .spouse:
+            return L10n.tr("relationship.spouse")
+        case .partner:
+            return L10n.tr("relationship.partner")
+        case .other:
+            return L10n.tr("relationship.other")
+        }
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let raw = try container.decode(String.self)
@@ -96,7 +119,7 @@ struct Contact: Codable, Identifiable, Hashable {
         }
 
         let nick = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return nick.isEmpty ? "Unnamed Contact" : nick
+        return nick.isEmpty ? L10n.tr("contacts.unnamed") : nick
     }
 
     var initials: String {

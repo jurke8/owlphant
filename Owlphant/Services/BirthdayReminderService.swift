@@ -38,7 +38,7 @@ actor BirthdayReminderService {
                 guard let components = reminderComponents(for: contact, rule: rule) else { continue }
 
                 let content = UNMutableNotificationContent()
-                content.title = "Birthday Reminder"
+                content.title = L10n.tr("notification.birthdayReminder.title")
                 content.body = reminderBody(for: contact, rule: rule)
                 content.sound = .default
 
@@ -86,15 +86,19 @@ actor BirthdayReminderService {
     }
 
     private func reminderBody(for contact: Contact, rule: BirthdayReminderRule) -> String {
-        let displayName = contact.displayName == "Unnamed Contact" ? "This contact" : contact.displayName
+        let first = contact.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let last = contact.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = "\(first) \(last)".trimmingCharacters(in: .whitespacesAndNewlines)
+        let nickname = contact.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let displayName = combined.isEmpty ? (nickname.isEmpty ? L10n.tr("notification.contact.this") : nickname) : combined
 
         switch rule.daysBeforeBirthday {
         case 0:
-            return "\(displayName) has a birthday today."
+            return L10n.format("notification.birthday.today", displayName)
         case 1:
-            return "\(displayName) has a birthday tomorrow."
+            return L10n.format("notification.birthday.tomorrow", displayName)
         default:
-            return "\(displayName) has a birthday in \(rule.daysBeforeBirthday) days."
+            return L10n.format("notification.birthday.inDays", displayName, rule.daysBeforeBirthday)
         }
     }
 
@@ -102,13 +106,12 @@ actor BirthdayReminderService {
         guard
             let birthday = contact.birthday?.trimmingCharacters(in: .whitespacesAndNewlines),
             !birthday.isEmpty,
-            let baseDate = Self.isoFormatter.date(from: birthday)
+            let value = BirthdayValue(rawValue: birthday),
+            let month = value.month,
+            let day = value.day
         else {
             return nil
         }
-
-        let source = calendar.dateComponents([.month, .day], from: baseDate)
-        guard let month = source.month, let day = source.day else { return nil }
 
         guard
             let fixedDate = calendar.date(from: DateComponents(year: 2001, month: month, day: day)),
@@ -121,12 +124,4 @@ actor BirthdayReminderService {
         guard let shiftedMonth = shifted.month, let shiftedDay = shifted.day else { return nil }
         return DateComponents(month: shiftedMonth, day: shiftedDay, hour: rule.hour, minute: rule.minute)
     }
-
-    private static let isoFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
 }

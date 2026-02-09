@@ -12,22 +12,22 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .light:
-            return "Light mode"
+            return L10n.tr("appearance.light.title")
         case .dark:
-            return "Dark mode"
+            return L10n.tr("appearance.dark.title")
         case .system:
-            return "Device default"
+            return L10n.tr("appearance.system.title")
         }
     }
 
     var subtitle: String {
         switch self {
         case .light:
-            return "Always use the light appearance."
+            return L10n.tr("appearance.light.subtitle")
         case .dark:
-            return "Always use the dark appearance."
+            return L10n.tr("appearance.dark.subtitle")
         case .system:
-            return "Match your iPhone appearance setting."
+            return L10n.tr("appearance.system.subtitle")
         }
     }
 

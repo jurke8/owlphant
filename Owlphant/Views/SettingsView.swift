@@ -4,6 +4,7 @@ import UserNotifications
 struct SettingsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @AppStorage(AppearanceMode.storageKey) private var appearanceModeRawValue: String = AppearanceMode.system.rawValue
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue: String = AppLanguage.defaultValue.rawValue
     @State private var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @State private var reminderRules: [BirthdayReminderRule] = []
     @State private var isPresentingAddReminder = false
@@ -13,17 +14,21 @@ struct SettingsView: View {
         AppearanceMode(rawValue: appearanceModeRawValue) ?? .system
     }
 
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultValue
+    }
+
     var body: some View {
         NavigationStack {
             ScreenBackground {
                 ScrollView {
                     VStack(spacing: 18) {
                         SectionCard {
-                            Text("Appearance")
+                            Text(L10n.tr("settings.appearance.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
 
-                            Text("Choose how Owlphant looks across the app.")
+                            Text(L10n.tr("settings.appearance.subtitle"))
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
 
@@ -35,29 +40,45 @@ struct SettingsView: View {
                         }
 
                         SectionCard {
+                            Text(L10n.tr("settings.language.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            Text(L10n.tr("settings.language.subtitle"))
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+
+                            VStack(spacing: 8) {
+                                ForEach(AppLanguage.allCases) { language in
+                                    languageRow(language)
+                                }
+                            }
+                        }
+
+                        SectionCard {
                             HStack {
-                                Text("Birthday reminders")
+                                Text(L10n.tr("settings.reminders.title"))
                                     .font(.system(.headline, design: .rounded).weight(.semibold))
                                     .foregroundStyle(AppTheme.text)
                                 Spacer()
                                 Button {
                                     isPresentingAddReminder = true
                                 } label: {
-                                    Label("Add reminder", systemImage: "plus")
+                                    Label(L10n.tr("settings.reminders.add"), systemImage: "plus")
                                         .font(.system(.footnote, design: .rounded).weight(.semibold))
                                 }
                                 .buttonStyle(.plain)
                                 .foregroundStyle(AppTheme.tint)
                             }
 
-                            Text("Manage reminders for all contacts with a birthday.")
+                            Text(L10n.tr("settings.reminders.subtitle"))
                                 .font(.system(.footnote, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
 
                             notificationStatusRow
 
                             if authorizationStatus == .notDetermined {
-                                Button("Enable notifications") {
+                                Button(L10n.tr("settings.notifications.enable")) {
                                     Task {
                                         _ = await BirthdayReminderService.shared.requestAuthorization()
                                         await refreshStatusAndSync()
@@ -80,7 +101,7 @@ struct SettingsView: View {
                                     }
                                     .buttonStyle(.plain)
                                     .foregroundStyle(AppTheme.muted)
-                                    .accessibilityLabel("Remove reminder")
+                                    .accessibilityLabel(L10n.tr("settings.reminders.remove"))
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
@@ -93,7 +114,7 @@ struct SettingsView: View {
                             }
 
                             if reminderRules.isEmpty {
-                                Text("No reminders set yet.")
+                                Text(L10n.tr("settings.reminders.empty"))
                                     .font(.system(.subheadline, design: .rounded))
                                     .foregroundStyle(AppTheme.muted)
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -109,7 +130,7 @@ struct SettingsView: View {
                         }
 
                         SectionCard {
-                            Text("Encryption enabled. Data stays local-first.")
+                            Text(L10n.tr("settings.encryption.note"))
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
                         }
@@ -119,7 +140,7 @@ struct SettingsView: View {
                     .padding(20)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(L10n.tr("tab.settings"))
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
@@ -174,6 +195,33 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    private func languageRow(_ language: AppLanguage) -> some View {
+        Button {
+            appLanguageRawValue = language.rawValue
+        } label: {
+            HStack(spacing: 12) {
+                Text(language.title)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.text)
+
+                Spacer()
+
+                Image(systemName: appLanguage == language ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(appLanguage == language ? AppTheme.tint : AppTheme.stroke)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(AppTheme.surfaceAlt.opacity(0.5))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(appLanguage == language ? AppTheme.tint.opacity(0.55) : AppTheme.stroke, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var notificationStatusRow: some View {
         HStack(spacing: 10) {
             Image(systemName: notificationStatusIcon)
@@ -197,13 +245,13 @@ struct SettingsView: View {
     private var notificationStatusText: String {
         switch authorizationStatus {
         case .authorized, .provisional, .ephemeral:
-            return "Notifications are enabled."
+            return L10n.tr("settings.notifications.enabled")
         case .denied:
-            return "Notifications are disabled. Enable them in system settings."
+            return L10n.tr("settings.notifications.disabled")
         case .notDetermined:
-            return "Notifications are not enabled yet."
+            return L10n.tr("settings.notifications.notEnabled")
         @unknown default:
-            return "Notification status unavailable."
+            return L10n.tr("settings.notifications.unavailable")
         }
     }
 
@@ -276,19 +324,19 @@ private struct AddBirthdayReminderSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("When") {
+                Section(L10n.tr("settings.addReminder.when")) {
                     Stepper(value: $daysBeforeBirthday, in: 0 ... 365) {
                         if daysBeforeBirthday == 0 {
-                            Text("On birthday")
+                            Text(L10n.tr("settings.addReminder.onBirthday"))
                         } else if daysBeforeBirthday == 1 {
-                            Text("1 day before")
+                            Text(L10n.tr("settings.addReminder.oneDayBefore"))
                         } else {
-                            Text("\(daysBeforeBirthday) days before")
+                            Text(L10n.format("settings.addReminder.daysBefore", daysBeforeBirthday))
                         }
                     }
 
                     DatePicker(
-                        "Time",
+                        L10n.tr("settings.addReminder.time"),
                         selection: $reminderTime,
                         displayedComponents: [.hourAndMinute]
                     )
@@ -302,13 +350,13 @@ private struct AddBirthdayReminderSheet: View {
                     }
                 }
             }
-            .navigationTitle("Add reminder")
+            .navigationTitle(L10n.tr("settings.addReminder.title"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(L10n.tr("common.cancel")) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(L10n.tr("common.save")) {
                         saveReminder()
                     }
                 }
@@ -323,7 +371,7 @@ private struct AddBirthdayReminderSheet: View {
         let newRule = BirthdayReminderRule(id: UUID(), daysBeforeBirthday: daysBeforeBirthday, hour: hour, minute: minute)
 
         if existingSignatures.contains(newRule.signature) {
-            duplicateMessage = "This reminder already exists."
+            duplicateMessage = L10n.tr("settings.addReminder.duplicate")
             return
         }
 

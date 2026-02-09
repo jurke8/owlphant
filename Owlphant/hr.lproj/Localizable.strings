@@ -1,0 +1,148 @@
+"tab.contacts" = "Kontakti";
+"tab.events" = "Događaji";
+"tab.map" = "Karta";
+"tab.settings" = "Postavke";
+
+"common.ok" = "U redu";
+"common.cancel" = "Odustani";
+"common.delete" = "Izbriši";
+"common.remove" = "Ukloni";
+"common.save" = "Spremi";
+"common.notice" = "Obavijest";
+
+"language.english" = "Engleski";
+"language.croatian" = "Hrvatski";
+
+"appearance.light.title" = "Svijetli način";
+"appearance.dark.title" = "Tamni način";
+"appearance.system.title" = "Prema uređaju";
+"appearance.light.subtitle" = "Uvijek koristi svijetli izgled.";
+"appearance.dark.subtitle" = "Uvijek koristi tamni izgled.";
+"appearance.system.subtitle" = "Prati postavku izgleda na iPhoneu.";
+
+"contacts.title" = "Kontakti";
+"contacts.setup.title" = "Postavljanje";
+"contacts.setup.subtitle" = "Inicijalizacija lokalne enkripcije i pohrane.";
+"contacts.empty.title" = "Još nema kontakata";
+"contacts.empty.subtitle" = "Dodaj nekoga iznad ili uvezi kontakte s telefona kada uvoz bude dostupan.";
+"contacts.alert.delete.title" = "Izbriši kontakt";
+"contacts.alert.delete.message" = "Ovaj kontakt će biti uklonjen s ovog uređaja.";
+"contacts.header.subtitle" = "Gradi snažne odnose uz podsjetnike i uvide.";
+"contacts.header.searchPlaceholder" = "Pretraži po imenu, mjestu, rođendanu ili bilješkama";
+"contacts.header.recent" = "Nedavno";
+"contacts.header.savedCount" = "%d spremljeno";
+"contacts.unnamed" = "Neimenovani kontakt";
+"contacts.unknown" = "Nepoznat kontakt";
+
+"contacts.card.livesIn" = "Živi u %@";
+"contacts.card.livesIn.label" = "Živi u";
+"contacts.card.relationships" = "Odnosi";
+"contacts.card.work" = "Posao";
+"contacts.card.phones" = "Telefoni";
+"contacts.card.emails" = "E-pošta";
+"contacts.card.contact" = "Kontakt";
+
+"contacts.form.addTitle" = "Dodaj kontakt";
+"contacts.form.editTitle" = "Uredi kontakt";
+"contacts.form.firstName" = "Ime";
+"contacts.form.lastName" = "Prezime";
+"contacts.form.nickname" = "Nadimak";
+"contacts.form.birthday" = "Rođendan";
+"contacts.form.birthdayPrecision" = "Format rođendana";
+"contacts.form.birthdayPrecision.fullDate" = "Puni datum";
+"contacts.form.birthdayPrecision.monthYear" = "Mjesec i godina";
+"contacts.form.birthdayPrecision.yearOnly" = "Samo godina";
+"contacts.form.birthdayMonth" = "Mjesec rođenja";
+"contacts.form.birthdayDay" = "Dan rođenja";
+"contacts.form.birthdayYear" = "Godina rođenja";
+"contacts.form.placeOfBirth" = "Mjesto rođenja";
+"contacts.form.placeOfLiving" = "Mjesto stanovanja (puna adresa)";
+"contacts.form.company" = "Tvrtka";
+"contacts.form.workPosition" = "Radno mjesto";
+"contacts.form.phones" = "Telefoni (odvojeni zarezom)";
+"contacts.form.emails" = "E-pošta (odvojena zarezom)";
+"contacts.form.tags" = "Oznake (odvojene zarezom)";
+"contacts.form.notes" = "Bilješke";
+"contacts.form.save" = "Spremi kontakt";
+"contacts.form.update" = "Ažuriraj kontakt";
+"contacts.form.addPhoto" = "Dodaj fotografiju";
+"contacts.form.section.basicInfo" = "Osnovne informacije";
+"contacts.form.section.location" = "Lokacija";
+"contacts.form.section.work" = "Posao";
+"contacts.form.section.channels" = "Kanali kontakta";
+"contacts.form.section.personal" = "Osobno";
+"contacts.form.relationship.contact" = "Kontakt";
+"contacts.form.relationship.selectContact" = "Odaberi kontakt";
+"contacts.form.relationship.type" = "Vrsta";
+"contacts.form.relationship.add" = "Dodaj odnos";
+"contacts.form.relationship.update" = "Ažuriraj odnos";
+
+"relationship.friend" = "Prijatelj";
+"relationship.colleague" = "Kolega";
+"relationship.acquaintance" = "Poznanik";
+"relationship.parent" = "Roditelj";
+"relationship.child" = "Dijete";
+"relationship.sibling" = "Brat/sestra";
+"relationship.spouse" = "Supružnik";
+"relationship.partner" = "Partner";
+"relationship.other" = "Ostalo";
+
+"events.upcoming.title" = "Nadolazeći rođendani";
+"events.upcoming.empty" = "Dodaj rođendane u kontakte kako bi primao podsjetnike.";
+"events.item.birthday" = "Rođendan: %@";
+"events.item.turningAge" = "puni %d";
+"events.count" = "%d kontakata";
+"events.next.none" = "Sljedeće: -";
+"events.next.value" = "Sljedeće: %@";
+
+"map.empty.title" = "Još nema mapiranih kontakata";
+"map.empty.subtitle" = "Dodaj mjesto stanovanja kontaktima ili dopusti pristup lokaciji za prikaz tvoje trenutne pozicije.";
+"map.alert.notice" = "Obavijest o karti";
+"map.accessibility.center" = "Centriraj kartu na trenutnu lokaciju";
+"map.accessibility.reset" = "Resetiraj kartu na početni prikaz";
+"map.group.count" = "%d kontakata na ovoj lokaciji";
+"map.samePlace.title" = "Isto mjesto";
+
+"settings.appearance.title" = "Izgled";
+"settings.appearance.subtitle" = "Odaberi kako Owlphant izgleda kroz aplikaciju.";
+"settings.language.title" = "Jezik";
+"settings.language.subtitle" = "Odaberi jezik aplikacije.";
+"settings.reminders.title" = "Podsjetnici za rođendane";
+"settings.reminders.add" = "Dodaj podsjetnik";
+"settings.reminders.subtitle" = "Upravljaj podsjetnicima za sve kontakte s rođendanom.";
+"settings.reminders.remove" = "Ukloni podsjetnik";
+"settings.reminders.empty" = "Još nema postavljenih podsjetnika.";
+"settings.encryption.note" = "Enkripcija je uključena. Podaci ostaju lokalno.";
+"settings.notifications.enable" = "Uključi obavijesti";
+"settings.notifications.enabled" = "Obavijesti su uključene.";
+"settings.notifications.disabled" = "Obavijesti su isključene. Uključi ih u postavkama sustava.";
+"settings.notifications.notEnabled" = "Obavijesti još nisu uključene.";
+"settings.notifications.unavailable" = "Status obavijesti nije dostupan.";
+
+"settings.addReminder.title" = "Dodaj podsjetnik";
+"settings.addReminder.when" = "Kada";
+"settings.addReminder.onBirthday" = "Na rođendan";
+"settings.addReminder.oneDayBefore" = "1 dan prije";
+"settings.addReminder.daysBefore" = "%d dana prije";
+"settings.addReminder.time" = "Vrijeme";
+"settings.addReminder.duplicate" = "Ovaj podsjetnik već postoji.";
+
+"reminder.timing.onBirthdayAt9" = "Na rođendan u 9:00";
+"reminder.timing.dayBeforeAt9" = "Dan prije u 9:00";
+"reminder.timing.dayBeforeAt2" = "Dan prije u 14:00";
+"reminder.rule.onBirthdayAtTime" = "Na rođendan u %@";
+"reminder.rule.oneDayBeforeAtTime" = "1 dan prije u %@";
+"reminder.rule.daysBeforeAtTime" = "%d dana prije u %@";
+
+"error.storage.load" = "Nije moguće učitati šifriranu pohranu.";
+"error.contact.missingName" = "Dodaj ime, prezime ili nadimak.";
+"error.contact.save" = "Nije moguće spremiti kontakt.";
+"error.contact.delete" = "Nije moguće izbrisati kontakt.";
+"error.map.resolve" = "Trenutno nije moguće mapirati spremljena mjesta stanovanja. Pokušaj ponovno uskoro.";
+"error.map.load" = "Nije moguće učitati kontakte za prikaz karte.";
+
+"notification.birthdayReminder.title" = "Podsjetnik za rođendan";
+"notification.contact.this" = "Ovaj kontakt";
+"notification.birthday.today" = "%@ danas ima rođendan.";
+"notification.birthday.tomorrow" = "%@ sutra ima rođendan.";
+"notification.birthday.inDays" = "%@ ima rođendan za %d dana.";

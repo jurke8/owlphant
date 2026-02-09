@@ -123,10 +123,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
             updateCameraPosition()
 
             if !validContacts.isEmpty && pins.isEmpty {
-                errorMessage = "Could not map saved living places yet. Try again in a moment."
+                errorMessage = L10n.tr("error.map.resolve")
             }
         } catch {
-            errorMessage = "Could not load contacts for map view."
+            errorMessage = L10n.tr("error.map.load")
         }
     }
 

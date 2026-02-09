@@ -14,22 +14,22 @@ struct ContentView: View {
         TabView {
             ContactsView(viewModel: contactsViewModel)
                 .tabItem {
-                    Label("Contacts", systemImage: "person.2.fill")
+                    Label(L10n.tr("tab.contacts"), systemImage: "person.2.fill")
                 }
 
-            BirthdaysView(viewModel: contactsViewModel)
+            EventsView(viewModel: contactsViewModel)
                 .tabItem {
-                    Label("Birthdays", systemImage: "bell.fill")
+                    Label(L10n.tr("tab.events"), systemImage: "bell.fill")
                 }
 
             PeopleMapView()
                 .tabItem {
-                    Label("Map", systemImage: "map.fill")
+                    Label(L10n.tr("tab.map"), systemImage: "map.fill")
                 }
 
             SettingsView(viewModel: contactsViewModel)
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
+                    Label(L10n.tr("tab.settings"), systemImage: "gearshape.fill")
                 }
         }
         .tint(AppTheme.tint)

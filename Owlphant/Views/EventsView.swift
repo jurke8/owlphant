@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct BirthdaysView: View {
+struct EventsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var reminderRules: [BirthdayReminderRule] = []
     @Environment(\.scenePhase) private var scenePhase
@@ -11,16 +11,16 @@ struct BirthdaysView: View {
                 ScrollView {
                     VStack(spacing: 18) {
                         SectionCard {
-                            Text("Upcoming birthdays")
+                            Text(L10n.tr("events.upcoming.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
 
-                            Text("\(upcomingBirthdayContacts.count) contacts")
+                            Text(contactCountText)
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
 
                             if upcomingBirthdayContacts.isEmpty {
-                                Text("Add birthdays in contacts to start receiving reminders.")
+                                Text(L10n.tr("events.upcoming.empty"))
                                     .font(.system(.subheadline, design: .rounded))
                                     .foregroundStyle(AppTheme.muted)
                             } else {
@@ -30,7 +30,7 @@ struct BirthdaysView: View {
                                             Text(contact.displayName)
                                                 .font(.system(.subheadline, design: .rounded).weight(.medium))
                                                 .foregroundStyle(AppTheme.text)
-                                            Text("Birthday: \(birthdayDetails(for: contact))")
+                                            Text(L10n.format("events.item.birthday", birthdayDetails(for: contact)))
                                                 .font(.system(.footnote, design: .rounded))
                                                 .foregroundStyle(AppTheme.muted)
                                         }
@@ -49,7 +49,7 @@ struct BirthdaysView: View {
                     .padding(20)
                 }
             }
-            .navigationTitle("Birthdays")
+            .navigationTitle(L10n.tr("tab.events"))
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
@@ -64,8 +64,8 @@ struct BirthdaysView: View {
     private var birthdayContacts: [Contact] {
         viewModel.contacts
             .filter { contact in
-                guard let birthday = contact.birthday?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
-                return !birthday.isEmpty
+                guard let birthday = contact.birthday else { return false }
+                return BirthdayValue(rawValue: birthday) != nil
             }
     }
 
@@ -83,8 +83,8 @@ struct BirthdaysView: View {
     }
 
     private func displayDate(_ value: String?) -> String {
-        guard let value, let date = Self.isoFormatter.date(from: value) else { return "-" }
-        return Self.displayFormatter.string(from: date)
+        guard let value, let birthday = BirthdayValue(rawValue: value) else { return "-" }
+        return birthday.displayText
     }
 
     private func birthdayDetails(for contact: Contact) -> String {
@@ -92,19 +92,21 @@ struct BirthdaysView: View {
         guard let upcomingAge = upcomingAge(for: contact) else {
             return dateText
         }
-        return "\(dateText) (\(upcomingAge))"
+        let ageText = L10n.format("events.item.turningAge", upcomingAge)
+        return "\(dateText) (\(ageText))"
     }
 
     private func upcomingAge(for contact: Contact) -> Int? {
         guard
             let value = contact.birthday,
-            let birthday = Self.isoFormatter.date(from: value),
+            let birthday = BirthdayValue(rawValue: value),
+            birthday.isFullDate,
             let nextBirthday = nextBirthdayDate(for: contact)
         else {
             return nil
         }
 
-        let birthYear = Self.calendar.component(.year, from: birthday)
+        let birthYear = birthday.year
         let nextBirthdayYear = Self.calendar.component(.year, from: nextBirthday)
         let age = nextBirthdayYear - birthYear
         return age > 0 ? age : nil
@@ -114,20 +116,24 @@ struct BirthdaysView: View {
         let next = reminderRules
             .compactMap { nextReminderDate(for: contact, rule: $0) }
             .min()
-        guard let date = next else { return "Next: -" }
-        return "Next: \(Self.reminderFormatter.string(from: date))"
+        guard let date = next else { return L10n.tr("events.next.none") }
+        return L10n.format("events.next.value", Self.reminderFormatter.string(from: date))
+    }
+
+    private var contactCountText: String {
+        L10n.format("events.count", upcomingBirthdayContacts.count)
     }
 
     private func nextBirthdayDate(for contact: Contact) -> Date? {
         guard
             let birthdayValue = contact.birthday,
-            let birthday = Self.isoFormatter.date(from: birthdayValue)
+            let birthday = BirthdayValue(rawValue: birthdayValue),
+            let month = birthday.month,
+            let day = birthday.day
         else {
             return nil
         }
 
-        let source = Self.calendar.dateComponents([.month, .day], from: birthday)
-        guard let month = source.month, let day = source.day else { return nil }
         return Self.calendar.nextDate(
             after: Date(),
             matching: DateComponents(month: month, day: day, hour: 0, minute: 0),
@@ -138,8 +144,10 @@ struct BirthdaysView: View {
     private func nextReminderDate(for contact: Contact, rule: BirthdayReminderRule) -> Date? {
         guard
             let birthdayValue = contact.birthday,
-            let birthday = Self.isoFormatter.date(from: birthdayValue),
-            let monthDay = reminderMonthDay(for: birthday, daysBeforeBirthday: rule.daysBeforeBirthday)
+            let birthday = BirthdayValue(rawValue: birthdayValue),
+            let month = birthday.month,
+            let day = birthday.day,
+            let monthDay = reminderMonthDay(month: month, day: day, daysBeforeBirthday: rule.daysBeforeBirthday)
         else {
             return nil
         }
@@ -148,9 +156,7 @@ struct BirthdaysView: View {
         return Self.calendar.nextDate(after: Date(), matching: components, matchingPolicy: .nextTime)
     }
 
-    private func reminderMonthDay(for birthday: Date, daysBeforeBirthday: Int) -> DateComponents? {
-        let source = Self.calendar.dateComponents([.month, .day], from: birthday)
-        guard let month = source.month, let day = source.day else { return nil }
+    private func reminderMonthDay(month: Int, day: Int, daysBeforeBirthday: Int) -> DateComponents? {
         guard
             let fixedDate = Self.calendar.date(from: DateComponents(year: 2001, month: month, day: day)),
             let shiftedDate = Self.calendar.date(byAdding: .day, value: -daysBeforeBirthday, to: fixedDate)
@@ -169,20 +175,6 @@ struct BirthdaysView: View {
         }
         return lhs.minute < rhs.minute
     }
-
-    private static let isoFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
-    private static let displayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("MMMM d")
-        return formatter
-    }()
 
     private static let reminderFormatter: DateFormatter = {
         let formatter = DateFormatter()

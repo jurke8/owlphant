@@ -5,7 +5,7 @@ struct ContactFormState {
     var firstName = ""
     var lastName = ""
     var nickname = ""
-    var birthday = "1995-01-01"
+    var birthday = "1990-01"
     var photoData: Data?
     var placeOfBirth = ""
     var placeOfLiving = ""
@@ -44,10 +44,14 @@ final class ContactsViewModel: ObservableObject {
                 contact.firstName,
                 contact.lastName,
                 contact.nickname ?? "",
+                contact.birthday ?? "",
+                contact.placeOfBirth ?? "",
+                contact.placeOfLiving ?? "",
                 contact.company ?? "",
                 contact.workPosition ?? "",
                 contact.emails.joined(separator: " "),
                 contact.phones.joined(separator: " "),
+                contact.notes ?? "",
                 contact.tags.joined(separator: " "),
             ].joined(separator: " ").lowercased()
             return haystack.contains(trimmed)
@@ -67,7 +71,7 @@ final class ContactsViewModel: ObservableObject {
             await syncBirthdayReminders()
             isReady = true
         } catch {
-            errorMessage = "Could not load encrypted storage."
+            errorMessage = L10n.tr("error.storage.load")
             isReady = true
         }
     }
@@ -83,7 +87,7 @@ final class ContactsViewModel: ObservableObject {
         form.firstName = contact.firstName
         form.lastName = contact.lastName
         form.nickname = contact.nickname ?? ""
-        form.birthday = contact.birthday ?? "1995-01-01"
+        form.birthday = contact.birthday ?? "1990-01"
         if let encodedPhoto = contact.photoDataBase64 {
             form.photoData = Foundation.Data(base64Encoded: encodedPhoto)
         } else {
@@ -115,7 +119,7 @@ final class ContactsViewModel: ObservableObject {
         let last = form.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         let nickname = form.nickname.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !first.isEmpty || !last.isEmpty || !nickname.isEmpty else {
-            errorMessage = "Please add first name, last name, or nickname."
+            errorMessage = L10n.tr("error.contact.missingName")
             return
         }
 
@@ -165,7 +169,7 @@ final class ContactsViewModel: ObservableObject {
             await syncBirthdayReminders()
             cancelForm()
         } catch {
-            errorMessage = "Could not save contact."
+            errorMessage = L10n.tr("error.contact.save")
         }
     }
 
@@ -180,7 +184,7 @@ final class ContactsViewModel: ObservableObject {
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
             await syncBirthdayReminders()
         } catch {
-            errorMessage = "Could not delete contact."
+            errorMessage = L10n.tr("error.contact.delete")
         }
     }
 
@@ -213,7 +217,7 @@ final class ContactsViewModel: ObservableObject {
     }
 
     func relationshipTargetName(_ id: UUID) -> String {
-        contacts.first(where: { $0.id == id })?.displayName ?? "Unknown contact"
+        contacts.first(where: { $0.id == id })?.displayName ?? L10n.tr("contacts.unknown")
     }
 
     var availableRelationshipTargets: [Contact] {

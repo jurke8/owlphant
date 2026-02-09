@@ -1,0 +1,148 @@
+"tab.contacts" = "Contacts";
+"tab.events" = "Events";
+"tab.map" = "Map";
+"tab.settings" = "Settings";
+
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.delete" = "Delete";
+"common.remove" = "Remove";
+"common.save" = "Save";
+"common.notice" = "Notice";
+
+"language.english" = "English";
+"language.croatian" = "Croatian";
+
+"appearance.light.title" = "Light mode";
+"appearance.dark.title" = "Dark mode";
+"appearance.system.title" = "Device default";
+"appearance.light.subtitle" = "Always use the light appearance.";
+"appearance.dark.subtitle" = "Always use the dark appearance.";
+"appearance.system.subtitle" = "Match your iPhone appearance setting.";
+
+"contacts.title" = "Contacts";
+"contacts.setup.title" = "Setting up";
+"contacts.setup.subtitle" = "Initializing local encryption and storage.";
+"contacts.empty.title" = "No contacts yet";
+"contacts.empty.subtitle" = "Add someone above or import from your phone contacts once imports are enabled.";
+"contacts.alert.delete.title" = "Delete contact";
+"contacts.alert.delete.message" = "This contact will be removed from this device.";
+"contacts.header.subtitle" = "Build strong relationships with reminders and insights.";
+"contacts.header.searchPlaceholder" = "Search by name, place, birthday, notes";
+"contacts.header.recent" = "Recent";
+"contacts.header.savedCount" = "%d saved";
+"contacts.unnamed" = "Unnamed Contact";
+"contacts.unknown" = "Unknown contact";
+
+"contacts.card.livesIn" = "Lives in %@";
+"contacts.card.livesIn.label" = "Lives in";
+"contacts.card.relationships" = "Relationships";
+"contacts.card.work" = "Work";
+"contacts.card.phones" = "Phones";
+"contacts.card.emails" = "Emails";
+"contacts.card.contact" = "Contact";
+
+"contacts.form.addTitle" = "Add a contact";
+"contacts.form.editTitle" = "Edit contact";
+"contacts.form.firstName" = "First name";
+"contacts.form.lastName" = "Last name";
+"contacts.form.nickname" = "Nickname";
+"contacts.form.birthday" = "Birthday";
+"contacts.form.birthdayPrecision" = "Birthday format";
+"contacts.form.birthdayPrecision.fullDate" = "Full date";
+"contacts.form.birthdayPrecision.monthYear" = "Month and year";
+"contacts.form.birthdayPrecision.yearOnly" = "Year only";
+"contacts.form.birthdayMonth" = "Birth month";
+"contacts.form.birthdayDay" = "Birth day";
+"contacts.form.birthdayYear" = "Birth year";
+"contacts.form.placeOfBirth" = "Place of birth";
+"contacts.form.placeOfLiving" = "Place of living (full address)";
+"contacts.form.company" = "Company";
+"contacts.form.workPosition" = "Work position";
+"contacts.form.phones" = "Phones (comma separated)";
+"contacts.form.emails" = "Emails (comma separated)";
+"contacts.form.tags" = "Tags (comma separated)";
+"contacts.form.notes" = "Notes";
+"contacts.form.save" = "Save contact";
+"contacts.form.update" = "Update contact";
+"contacts.form.addPhoto" = "Add photo";
+"contacts.form.section.basicInfo" = "Basic info";
+"contacts.form.section.location" = "Location";
+"contacts.form.section.work" = "Work";
+"contacts.form.section.channels" = "Contact channels";
+"contacts.form.section.personal" = "Personal";
+"contacts.form.relationship.contact" = "Contact";
+"contacts.form.relationship.selectContact" = "Select contact";
+"contacts.form.relationship.type" = "Type";
+"contacts.form.relationship.add" = "Add relationship";
+"contacts.form.relationship.update" = "Update relationship";
+
+"relationship.friend" = "Friend";
+"relationship.colleague" = "Colleague";
+"relationship.acquaintance" = "Acquaintance";
+"relationship.parent" = "Parent";
+"relationship.child" = "Child";
+"relationship.sibling" = "Sibling";
+"relationship.spouse" = "Spouse";
+"relationship.partner" = "Partner";
+"relationship.other" = "Other";
+
+"events.upcoming.title" = "Upcoming birthdays";
+"events.upcoming.empty" = "Add birthdays in contacts to start receiving reminders.";
+"events.item.birthday" = "Birthday: %@";
+"events.item.turningAge" = "turning %d";
+"events.count" = "%d contacts";
+"events.next.none" = "Next: -";
+"events.next.value" = "Next: %@";
+
+"map.empty.title" = "No mapped contacts yet";
+"map.empty.subtitle" = "Add a living place to contacts, or allow location access to show your current position.";
+"map.alert.notice" = "Map notice";
+"map.accessibility.center" = "Center map on current location";
+"map.accessibility.reset" = "Reset map to initial view";
+"map.group.count" = "%d contacts in this place";
+"map.samePlace.title" = "Same Place";
+
+"settings.appearance.title" = "Appearance";
+"settings.appearance.subtitle" = "Choose how Owlphant looks across the app.";
+"settings.language.title" = "Language";
+"settings.language.subtitle" = "Choose your app language.";
+"settings.reminders.title" = "Birthday reminders";
+"settings.reminders.add" = "Add reminder";
+"settings.reminders.subtitle" = "Manage reminders for all contacts with a birthday.";
+"settings.reminders.remove" = "Remove reminder";
+"settings.reminders.empty" = "No reminders set yet.";
+"settings.encryption.note" = "Encryption enabled. Data stays local-first.";
+"settings.notifications.enable" = "Enable notifications";
+"settings.notifications.enabled" = "Notifications are enabled.";
+"settings.notifications.disabled" = "Notifications are disabled. Enable them in system settings.";
+"settings.notifications.notEnabled" = "Notifications are not enabled yet.";
+"settings.notifications.unavailable" = "Notification status unavailable.";
+
+"settings.addReminder.title" = "Add reminder";
+"settings.addReminder.when" = "When";
+"settings.addReminder.onBirthday" = "On birthday";
+"settings.addReminder.oneDayBefore" = "1 day before";
+"settings.addReminder.daysBefore" = "%d days before";
+"settings.addReminder.time" = "Time";
+"settings.addReminder.duplicate" = "This reminder already exists.";
+
+"reminder.timing.onBirthdayAt9" = "On birthday at 9:00 AM";
+"reminder.timing.dayBeforeAt9" = "Day before at 9:00 AM";
+"reminder.timing.dayBeforeAt2" = "Day before at 2:00 PM";
+"reminder.rule.onBirthdayAtTime" = "On birthday at %@";
+"reminder.rule.oneDayBeforeAtTime" = "1 day before at %@";
+"reminder.rule.daysBeforeAtTime" = "%d days before at %@";
+
+"error.storage.load" = "Could not load encrypted storage.";
+"error.contact.missingName" = "Please add first name, last name, or nickname.";
+"error.contact.save" = "Could not save contact.";
+"error.contact.delete" = "Could not delete contact.";
+"error.map.resolve" = "Could not map saved living places yet. Try again in a moment.";
+"error.map.load" = "Could not load contacts for map view.";
+
+"notification.birthdayReminder.title" = "Birthday Reminder";
+"notification.contact.this" = "This contact";
+"notification.birthday.today" = "%@ has a birthday today.";
+"notification.birthday.tomorrow" = "%@ has a birthday tomorrow.";
+"notification.birthday.inDays" = "%@ has a birthday in %d days.";

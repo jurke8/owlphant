@@ -10,10 +10,10 @@ struct PeopleMapView: View {
                 if viewModel.pins.isEmpty && viewModel.userCoordinate == nil {
                     ScreenBackground {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("No mapped contacts yet")
+                            Text(L10n.tr("map.empty.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
-                            Text("Add a living place to contacts, or allow location access to show your current position.")
+                            Text(L10n.tr("map.empty.subtitle"))
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
                         }
@@ -25,7 +25,7 @@ struct PeopleMapView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationTitle("Map")
+            .navigationTitle(L10n.tr("tab.map"))
             .navigationBarTitleDisplayMode(.inline)
         }
         .task {
@@ -40,11 +40,11 @@ struct PeopleMapView: View {
                 viewModel.selectedContact = contact
             }
         }
-        .alert("Map notice", isPresented: Binding(
+        .alert(L10n.tr("map.alert.notice"), isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {
+            Button(L10n.tr("common.ok"), role: .cancel) {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -99,7 +99,7 @@ struct PeopleMapView: View {
         }
         .buttonStyle(.plain)
         .disabled(viewModel.isLocatingUser)
-        .accessibilityLabel("Center map on current location")
+        .accessibilityLabel(L10n.tr("map.accessibility.center"))
     }
 
     private var mapResetButton: some View {
@@ -122,7 +122,7 @@ struct PeopleMapView: View {
         }
         .buttonStyle(.plain)
         .disabled(viewModel.isLoading)
-        .accessibilityLabel("Reset map to initial view")
+        .accessibilityLabel(L10n.tr("map.accessibility.reset"))
     }
 
     @ViewBuilder
@@ -225,7 +225,7 @@ private struct MapGroupedContactsView: View {
                 ScrollView {
                     VStack(spacing: 12) {
                         SectionCard {
-                            Text("\(group.contacts.count) contacts in this place")
+                            Text(L10n.format("map.group.count", group.contacts.count))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
                             Text(group.place)
@@ -281,7 +281,7 @@ private struct MapGroupedContactsView: View {
                     .padding(20)
                 }
             }
-            .navigationTitle("Same Place")
+            .navigationTitle(L10n.tr("map.samePlace.title"))
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -314,7 +314,7 @@ private struct MapContactDetailsView: View {
 
                         if let place = contact.placeOfLiving, !place.isEmpty {
                             SectionCard {
-                                Text("Lives in")
+                                Text(L10n.tr("contacts.card.livesIn.label"))
                                     .font(.system(.caption, design: .rounded).weight(.medium))
                                     .textCase(.uppercase)
                                     .foregroundStyle(AppTheme.muted)
@@ -326,7 +326,7 @@ private struct MapContactDetailsView: View {
 
                         if let birthday = contact.birthday, !birthday.isEmpty {
                             SectionCard {
-                                Text("Birthday")
+                                Text(L10n.tr("contacts.form.birthday"))
                                     .font(.system(.caption, design: .rounded).weight(.medium))
                                     .textCase(.uppercase)
                                     .foregroundStyle(AppTheme.muted)
@@ -338,7 +338,7 @@ private struct MapContactDetailsView: View {
 
                         if let company = contact.company, !company.isEmpty {
                             SectionCard {
-                                Text("Work")
+                                Text(L10n.tr("contacts.card.work"))
                                     .font(.system(.caption, design: .rounded).weight(.medium))
                                     .textCase(.uppercase)
                                     .foregroundStyle(AppTheme.muted)
@@ -356,7 +356,7 @@ private struct MapContactDetailsView: View {
                         if !contact.phones.isEmpty || !contact.emails.isEmpty {
                             SectionCard {
                                 if !contact.phones.isEmpty {
-                                    Text("Phones")
+                                    Text(L10n.tr("contacts.card.phones"))
                                         .font(.system(.caption, design: .rounded).weight(.medium))
                                         .textCase(.uppercase)
                                         .foregroundStyle(AppTheme.muted)
@@ -368,7 +368,7 @@ private struct MapContactDetailsView: View {
                                 }
 
                                 if !contact.emails.isEmpty {
-                                    Text("Emails")
+                                    Text(L10n.tr("contacts.card.emails"))
                                         .font(.system(.caption, design: .rounded).weight(.medium))
                                         .textCase(.uppercase)
                                         .foregroundStyle(AppTheme.muted)
@@ -384,7 +384,7 @@ private struct MapContactDetailsView: View {
 
                         if let notes = contact.notes, !notes.isEmpty {
                             SectionCard {
-                                Text("Notes")
+                                Text(L10n.tr("contacts.form.notes"))
                                     .font(.system(.caption, design: .rounded).weight(.medium))
                                     .textCase(.uppercase)
                                     .foregroundStyle(AppTheme.muted)
@@ -397,7 +397,7 @@ private struct MapContactDetailsView: View {
                     .padding(20)
                 }
             }
-            .navigationTitle("Contact")
+            .navigationTitle(L10n.tr("contacts.card.contact"))
             .navigationBarTitleDisplayMode(.inline)
         }
     }

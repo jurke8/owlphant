@@ -13,11 +13,11 @@ enum BirthdayReminderTiming: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .onBirthdayAt9AM:
-            "On birthday at 9:00 AM"
+            L10n.tr("reminder.timing.onBirthdayAt9")
         case .dayBeforeAt9AM:
-            "Day before at 9:00 AM"
+            L10n.tr("reminder.timing.dayBeforeAt9")
         case .dayBeforeAt2PM:
-            "Day before at 2:00 PM"
+            L10n.tr("reminder.timing.dayBeforeAt2")
         }
     }
 
@@ -42,12 +42,12 @@ struct BirthdayReminderRule: Codable, Identifiable, Hashable {
     var title: String {
         let time = Self.timeFormatter.string(from: Self.timeDate(hour: hour, minute: minute))
         if daysBeforeBirthday == 0 {
-            return "On birthday at \(time)"
+            return L10n.format("reminder.rule.onBirthdayAtTime", time)
         }
         if daysBeforeBirthday == 1 {
-            return "1 day before at \(time)"
+            return L10n.format("reminder.rule.oneDayBeforeAtTime", time)
         }
-        return "\(daysBeforeBirthday) days before at \(time)"
+        return L10n.format("reminder.rule.daysBeforeAtTime", daysBeforeBirthday, time)
     }
 
     static func loadFromDefaults(_ defaults: UserDefaults = .standard) -> [BirthdayReminderRule] {

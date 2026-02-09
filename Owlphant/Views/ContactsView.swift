@@ -12,14 +12,14 @@ struct ContactsView: View {
             ScreenBackground {
                 if !viewModel.isReady {
                     VStack(spacing: 14) {
-                        Text("Contacts")
+                        Text(L10n.tr("contacts.title"))
                             .font(.system(size: 32, weight: .bold, design: .serif))
                             .foregroundStyle(AppTheme.text)
                         SectionCard {
-                            Text("Setting up")
+                            Text(L10n.tr("contacts.setup.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
-                            Text("Initializing local encryption and storage.")
+                            Text(L10n.tr("contacts.setup.subtitle"))
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
                         }
@@ -31,10 +31,10 @@ struct ContactsView: View {
                             header
                             if viewModel.filteredContacts.isEmpty {
                                 SectionCard {
-                                    Text("No contacts yet")
+                                    Text(L10n.tr("contacts.empty.title"))
                                         .font(.system(.headline, design: .rounded).weight(.semibold))
                                         .foregroundStyle(AppTheme.text)
-                                    Text("Add someone above or import from your phone contacts once imports are enabled.")
+                                    Text(L10n.tr("contacts.empty.subtitle"))
                                         .font(.system(.subheadline, design: .rounded))
                                         .foregroundStyle(AppTheme.muted)
                                 }
@@ -58,7 +58,7 @@ struct ContactsView: View {
                     }
                 }
             }
-            .navigationTitle("Contacts")
+            .navigationTitle(L10n.tr("contacts.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -79,27 +79,27 @@ struct ContactsView: View {
         .sheet(isPresented: $viewModel.isPresentingForm) {
             ContactFormSheet(viewModel: viewModel)
         }
-        .alert("Delete contact", isPresented: Binding(
+        .alert(L10n.tr("contacts.alert.delete.title"), isPresented: Binding(
             get: { pendingDelete != nil },
             set: { if !$0 { pendingDelete = nil } }
         )) {
-            Button("Cancel", role: .cancel) {
+            Button(L10n.tr("common.cancel"), role: .cancel) {
                 pendingDelete = nil
             }
-            Button("Delete", role: .destructive) {
+            Button(L10n.tr("common.delete"), role: .destructive) {
                 if let pendingDelete {
                     Task { await viewModel.delete(pendingDelete) }
                 }
                 self.pendingDelete = nil
             }
         } message: {
-            Text("This contact will be removed from this device.")
+            Text(L10n.tr("contacts.alert.delete.message"))
         }
-        .alert("Notice", isPresented: Binding(
+        .alert(L10n.tr("common.notice"), isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {
+            Button(L10n.tr("common.ok"), role: .cancel) {
                 viewModel.errorMessage = nil
             }
         } message: {
@@ -110,24 +110,28 @@ struct ContactsView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("Build strong relationships with reminders and insights.")
+                Text(L10n.tr("contacts.header.subtitle"))
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
-                TextField("Search by name, tag, email", text: $viewModel.query)
+                TextField(L10n.tr("contacts.header.searchPlaceholder"), text: $viewModel.query)
                     .textInputAutocapitalization(.never)
                     .appInputChrome()
             }
 
             HStack {
-                Text("Recent")
+                Text(L10n.tr("contacts.header.recent"))
                     .font(.system(.headline, design: .rounded).weight(.semibold))
                     .foregroundStyle(AppTheme.text)
                 Spacer()
-                Text("\(viewModel.filteredContacts.count) saved")
+                Text(savedContactsText)
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
             }
         }
+    }
+
+    private var savedContactsText: String {
+        L10n.format("contacts.header.savedCount", viewModel.filteredContacts.count)
     }
 }
 
@@ -171,7 +175,7 @@ private struct ContactCardView: View {
             }
 
             if let birthday = contact.birthday, !birthday.isEmpty {
-                Text("🎂 \(birthday)")
+                Text("🎂 \(BirthdayValue(rawValue: birthday)?.displayText ?? birthday)")
                     .font(.system(.subheadline, design: .rounded).weight(.medium))
                     .foregroundStyle(AppTheme.text)
                     .padding(.horizontal, 10)
@@ -181,7 +185,7 @@ private struct ContactCardView: View {
             }
 
             if let city = contact.placeOfLiving, !city.isEmpty {
-                Text("Lives in \(city)")
+                Text(L10n.format("contacts.card.livesIn", city))
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
             }
@@ -196,56 +200,60 @@ private struct ContactCardView: View {
 
             if !contact.relationships.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Relationships")
-                        .font(.system(.caption, design: .rounded).weight(.medium))
-                        .textCase(.uppercase)
-                        .foregroundStyle(AppTheme.muted)
-                    VStack(spacing: 8) {
-                        ForEach(sortedRelationships) { relationship in
-                            Button {
-                                onRelationshipTap(relationship)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: relationship.type.symbolName)
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(AppTheme.tint)
-                                        .frame(width: 24, height: 24)
-                                        .background(AppTheme.tint.opacity(0.12))
-                                        .clipShape(Circle())
+                    HStack {
+                        Text(L10n.tr("contacts.card.relationships"))
+                            .font(.system(.caption, design: .rounded).weight(.medium))
+                            .textCase(.uppercase)
+                            .foregroundStyle(AppTheme.muted)
+                        Spacer(minLength: 0)
+                        Text("\(contact.relationships.count)")
+                            .font(.system(.caption2, design: .rounded).weight(.semibold))
+                            .foregroundStyle(AppTheme.muted)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(AppTheme.surfaceAlt.opacity(0.45))
+                            .clipShape(Capsule())
+                    }
 
-                                    Text(relationship.type.rawValue)
+                    ForEach(sortedRelationships) { relationship in
+                        Button {
+                            onRelationshipTap(relationship)
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: relationship.type.symbolName)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(AppTheme.tint)
+                                    .frame(width: 26, height: 26)
+                                    .background(AppTheme.tint.opacity(0.12))
+                                    .clipShape(Circle())
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(relationshipLabel(relationship.contactId))
                                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                                         .foregroundStyle(AppTheme.text)
-
-                                    Text("·")
-                                        .foregroundStyle(AppTheme.muted)
-
-                                    Text(relationshipLabel(relationship.contactId))
-                                        .font(.system(.subheadline, design: .rounded))
-                                        .foregroundStyle(AppTheme.muted)
                                         .lineLimit(1)
-
-                                    Spacer(minLength: 0)
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundStyle(AppTheme.muted.opacity(0.8))
+                                    Text(relationship.type.localizedTitle)
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .foregroundStyle(AppTheme.muted)
                                 }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(AppTheme.surface)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                                Spacer(minLength: 0)
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(AppTheme.muted.opacity(0.8))
                             }
-                            .buttonStyle(.plain)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(AppTheme.surfaceAlt.opacity(0.45))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(AppTheme.stroke.opacity(0.45), lineWidth: 1)
+                            )
                         }
+                        .buttonStyle(.plain)
                     }
-                    .padding(10)
-                    .background(AppTheme.surfaceAlt.opacity(0.55))
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(AppTheme.stroke.opacity(0.65), lineWidth: 1)
-                    )
                 }
             }
 
@@ -309,7 +317,15 @@ private extension RelationshipType {
 private struct ContactFormSheet: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var selectedPhotoItem: PhotosPickerItem?
-    @State private var birthDate = Date.fromISO("1995-01-01") ?? Date()
+    @State private var birthdayYear: Int? = 1990
+    @State private var birthdayMonth: Int? = 1
+    @State private var birthdayDay: Int?
+    @State private var basicInfoExpanded = true
+    @State private var locationExpanded = false
+    @State private var workExpanded = false
+    @State private var contactChannelsExpanded = false
+    @State private var personalExpanded = false
+    @State private var relationshipsExpanded = false
 
     var body: some View {
         NavigationStack {
@@ -318,55 +334,93 @@ private struct ContactFormSheet: View {
                     VStack(spacing: 12) {
                         SectionCard {
                             HStack {
-                                Text(viewModel.selectedContactId == nil ? "Add a contact" : "Edit contact")
+                                Text(viewModel.selectedContactId == nil ? L10n.tr("contacts.form.addTitle") : L10n.tr("contacts.form.editTitle"))
                                     .font(.system(.title3, design: .rounded).weight(.semibold))
                                     .foregroundStyle(AppTheme.text)
                                 Spacer()
-                                Button("Cancel") {
+                                Button(L10n.tr("common.cancel")) {
                                     viewModel.cancelForm()
                                 }
                                 .foregroundStyle(AppTheme.muted)
                             }
+                        }
 
+                        FormDisclosureSection(title: L10n.tr("contacts.form.section.basicInfo"), isExpanded: $basicInfoExpanded) {
                             photoRow
+                            TextField(L10n.tr("contacts.form.firstName"), text: binding(\.firstName))
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.lastName"), text: binding(\.lastName))
+                                .appInputChrome()
 
-                            Group {
-                                TextField("First name", text: binding(\.firstName))
-                                    .appInputChrome()
-                                TextField("Last name", text: binding(\.lastName))
-                                    .appInputChrome()
-                                TextField("Nickname", text: binding(\.nickname))
-                                    .appInputChrome()
-                                DatePicker("Birthday", selection: $birthDate, displayedComponents: .date)
-                                    .datePickerStyle(.compact)
-                                    .appInputChrome()
-                                    .onChange(of: birthDate) { _, newValue in
-                                        viewModel.form.birthday = newValue.isoDateString
+                            HStack(spacing: 8) {
+                                Picker(L10n.tr("contacts.form.birthdayDay"), selection: $birthdayDay) {
+                                    Text("-").tag(Optional<Int>.none)
+                                    ForEach(validDaysInSelectedMonth, id: \.self) { day in
+                                        Text(String(day)).tag(Optional(day))
                                     }
-                                CityAutocompleteField(title: "Place of birth", text: binding(\.placeOfBirth))
-                                AddressAutocompleteField(title: "Place of living (full address)", text: binding(\.placeOfLiving))
-                                TextField("Company", text: binding(\.company))
-                                    .appInputChrome()
-                                TextField("Work position", text: binding(\.workPosition))
-                                    .appInputChrome()
-                                TextField("Phones (comma separated)", text: binding(\.phones))
-                                    .keyboardType(.phonePad)
-                                    .appInputChrome()
-                                TextField("Emails (comma separated)", text: binding(\.emails))
-                                    .textInputAutocapitalization(.never)
-                                    .keyboardType(.emailAddress)
-                                    .appInputChrome()
-                                TextField("Tags (comma separated)", text: binding(\.tags))
-                                    .appInputChrome()
-                                TextField("Notes", text: binding(\.notes), axis: .vertical)
-                                    .lineLimit(3...5)
-                                    .appInputChrome()
+                                }
+                                .pickerStyle(.menu)
+                                .disabled(birthdayMonth == nil)
+                                .appInputChrome()
+                                .frame(maxWidth: .infinity)
+
+                                Picker(L10n.tr("contacts.form.birthdayMonth"), selection: $birthdayMonth) {
+                                    Text("-").tag(Optional<Int>.none)
+                                    ForEach(Array(Self.monthLabels.enumerated()), id: \.offset) { idx, label in
+                                        Text(label).tag(Optional(idx + 1))
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .appInputChrome()
+                                .frame(maxWidth: .infinity)
+
+                                Picker(L10n.tr("contacts.form.birthdayYear"), selection: $birthdayYear) {
+                                    Text("-").tag(Optional<Int>.none)
+                                    ForEach(Self.yearOptions, id: \.self) { year in
+                                        Text(String(year)).tag(Optional(year))
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .appInputChrome()
+                                .frame(maxWidth: .infinity)
                             }
+                        }
+
+                        FormDisclosureSection(title: L10n.tr("contacts.form.section.location"), isExpanded: $locationExpanded) {
+                            CityAutocompleteField(title: L10n.tr("contacts.form.placeOfBirth"), text: binding(\.placeOfBirth))
+                            AddressAutocompleteField(title: L10n.tr("contacts.form.placeOfLiving"), text: binding(\.placeOfLiving))
+                        }
+
+                        FormDisclosureSection(title: L10n.tr("contacts.form.section.work"), isExpanded: $workExpanded) {
+                            TextField(L10n.tr("contacts.form.company"), text: binding(\.company))
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.workPosition"), text: binding(\.workPosition))
+                                .appInputChrome()
+                        }
+
+                        FormDisclosureSection(title: L10n.tr("contacts.form.section.channels"), isExpanded: $contactChannelsExpanded) {
+                            TextField(L10n.tr("contacts.form.phones"), text: binding(\.phones))
+                                .keyboardType(.phonePad)
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.emails"), text: binding(\.emails))
+                                .textInputAutocapitalization(.never)
+                                .keyboardType(.emailAddress)
+                                .appInputChrome()
+                        }
+
+                        FormDisclosureSection(title: L10n.tr("contacts.form.section.personal"), isExpanded: $personalExpanded) {
+                            TextField(L10n.tr("contacts.form.nickname"), text: binding(\.nickname))
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.tags"), text: binding(\.tags))
+                                .appInputChrome()
+                            TextField(L10n.tr("contacts.form.notes"), text: binding(\.notes), axis: .vertical)
+                                .lineLimit(3...5)
+                                .appInputChrome()
                         }
 
                         relationshipSection
 
-                        Button(viewModel.selectedContactId == nil ? "Save contact" : "Update contact") {
+                        Button(viewModel.selectedContactId == nil ? L10n.tr("contacts.form.save") : L10n.tr("contacts.form.update")) {
                             Task { await viewModel.save() }
                         }
                         .buttonStyle(PrimaryButtonStyle())
@@ -378,10 +432,31 @@ private struct ContactFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
-            birthDate = Date.fromISO(viewModel.form.birthday) ?? Date.fromISO("1995-01-01") ?? Date()
+            applyBirthdayFromForm(viewModel.form.birthday)
         }
         .onChange(of: viewModel.form.birthday) { _, newValue in
-            birthDate = Date.fromISO(newValue) ?? birthDate
+            applyBirthdayFromForm(newValue)
+        }
+        .onChange(of: birthdayMonth) { _, _ in
+            if let day = birthdayDay, day > maxDayInSelectedMonth {
+                birthdayDay = maxDayInSelectedMonth
+            }
+            if birthdayMonth == nil {
+                birthdayDay = nil
+            }
+            syncBirthdayToForm()
+        }
+        .onChange(of: birthdayYear) { _, _ in
+            if let day = birthdayDay, day > maxDayInSelectedMonth {
+                birthdayDay = maxDayInSelectedMonth
+            }
+            syncBirthdayToForm()
+        }
+        .onChange(of: birthdayDay) { _, _ in
+            if birthdayDay != nil && birthdayMonth == nil {
+                birthdayMonth = 1
+            }
+            syncBirthdayToForm()
         }
         .onChange(of: selectedPhotoItem) { _, item in
             Task {
@@ -402,7 +477,7 @@ private struct ContactFormSheet: View {
                             .resizable()
                             .scaledToFill()
                     } else {
-                        Text("Add photo")
+                        Text(L10n.tr("contacts.form.addPhoto"))
                             .font(.system(.subheadline, design: .rounded).weight(.medium))
                             .foregroundStyle(AppTheme.muted)
                     }
@@ -417,7 +492,7 @@ private struct ContactFormSheet: View {
             }
 
             if viewModel.form.photoData != nil {
-                Button("Remove") {
+                Button(L10n.tr("common.remove")) {
                     viewModel.form.photoData = nil
                     selectedPhotoItem = nil
                 }
@@ -428,13 +503,9 @@ private struct ContactFormSheet: View {
     }
 
     private var relationshipSection: some View {
-        SectionCard {
-            Text("Relationships")
-                .font(.system(.headline, design: .rounded).weight(.semibold))
-                .foregroundStyle(AppTheme.text)
-
-            Picker("Contact", selection: binding(\.relationshipDraftTargetId)) {
-                Text("Select contact").tag(Optional<UUID>.none)
+        FormDisclosureSection(title: L10n.tr("contacts.card.relationships"), isExpanded: $relationshipsExpanded) {
+            Picker(L10n.tr("contacts.form.relationship.contact"), selection: binding(\.relationshipDraftTargetId)) {
+                Text(L10n.tr("contacts.form.relationship.selectContact")).tag(Optional<UUID>.none)
                 ForEach(viewModel.availableRelationshipTargets) { contact in
                     Text(contact.displayName).tag(Optional(contact.id))
                 }
@@ -442,15 +513,15 @@ private struct ContactFormSheet: View {
             .pickerStyle(.menu)
             .appInputChrome()
 
-            Picker("Type", selection: binding(\.relationshipDraftType)) {
+            Picker(L10n.tr("contacts.form.relationship.type"), selection: binding(\.relationshipDraftType)) {
                 ForEach(RelationshipType.allCases) { type in
-                    Text(type.rawValue).tag(type)
+                    Text(type.localizedTitle).tag(type)
                 }
             }
             .pickerStyle(.menu)
             .appInputChrome()
 
-            Button(viewModel.form.relationshipDraftIndex == nil ? "Add relationship" : "Update relationship") {
+            Button(viewModel.form.relationshipDraftIndex == nil ? L10n.tr("contacts.form.relationship.add") : L10n.tr("contacts.form.relationship.update")) {
                 viewModel.addOrUpdateRelationshipDraft()
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -458,17 +529,22 @@ private struct ContactFormSheet: View {
             if !viewModel.form.relationships.isEmpty {
                 ForEach(sortedDraftRelationships) { rel in
                     HStack {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Image(systemName: rel.type.symbolName)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(AppTheme.tint)
-                                .frame(width: 22, height: 22)
+                                .frame(width: 26, height: 26)
                                 .background(AppTheme.tint.opacity(0.12))
                                 .clipShape(Circle())
-                            Text("\(rel.type.rawValue) · \(viewModel.relationshipTargetName(rel.contactId))")
-                                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                                .foregroundStyle(AppTheme.text)
-                                .lineLimit(1)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(viewModel.relationshipTargetName(rel.contactId))
+                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(AppTheme.text)
+                                    .lineLimit(1)
+                                Text(rel.type.localizedTitle)
+                                    .font(.system(.caption, design: .rounded).weight(.medium))
+                                    .foregroundStyle(AppTheme.muted)
+                            }
                         }
                         Spacer()
                         Button {
@@ -485,13 +561,13 @@ private struct ContactFormSheet: View {
                         }
                         .buttonStyle(.borderless)
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(AppTheme.surfaceAlt.opacity(0.6))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(AppTheme.surfaceAlt.opacity(0.45))
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(AppTheme.stroke.opacity(0.65), lineWidth: 1)
+                            .stroke(AppTheme.stroke.opacity(0.45), lineWidth: 1)
                     )
                 }
             }
@@ -507,11 +583,119 @@ private struct ContactFormSheet: View {
         }
     }
 
+    private func applyBirthdayFromForm(_ raw: String) {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            birthdayYear = nil
+            birthdayMonth = nil
+            birthdayDay = nil
+            return
+        }
+
+        let parsed = BirthdayValue(rawValue: raw) ?? BirthdayValue(rawValue: "1990-01")
+        guard let parsed else { return }
+
+        birthdayYear = parsed.year
+        birthdayMonth = parsed.month
+        birthdayDay = parsed.day
+    }
+
+    private func syncBirthdayToForm() {
+        guard let year = birthdayYear else {
+            viewModel.form.birthday = ""
+            return
+        }
+
+        let value: BirthdayValue?
+        if let month = birthdayMonth, let day = birthdayDay {
+            value = BirthdayValue(year: year, month: month, day: day)
+        } else if let month = birthdayMonth {
+            value = BirthdayValue(year: year, month: month, day: nil)
+        } else {
+            value = BirthdayValue(year: year, month: nil, day: nil)
+        }
+
+        guard let value else {
+            viewModel.form.birthday = ""
+            return
+        }
+
+        if viewModel.form.birthday != value.rawValue {
+            viewModel.form.birthday = value.rawValue
+        }
+    }
+
     private func binding<T>(_ keyPath: WritableKeyPath<ContactFormState, T>) -> Binding<T> {
         Binding(
             get: { viewModel.form[keyPath: keyPath] },
             set: { viewModel.form[keyPath: keyPath] = $0 }
         )
+    }
+
+    private static var monthLabels: [String] {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale.current
+        return formatter.monthSymbols
+    }
+
+    private static var yearOptions: [Int] {
+        let currentYear = Calendar(identifier: .gregorian).component(.year, from: Date())
+        return Array((1900...currentYear).reversed())
+    }
+
+    private var maxDayInSelectedMonth: Int {
+        guard let birthdayYear, let birthdayMonth else {
+            return 31
+        }
+
+        let calendar = Calendar(identifier: .gregorian)
+        let components = DateComponents(year: birthdayYear, month: birthdayMonth)
+        guard let date = calendar.date(from: components),
+              let range = calendar.range(of: .day, in: .month, for: date) else {
+            return 31
+        }
+        return range.count
+    }
+
+    private var validDaysInSelectedMonth: [Int] {
+        Array(1...maxDayInSelectedMonth)
+    }
+}
+
+private struct FormDisclosureSection<Content: View>: View {
+    let title: String
+    @Binding var isExpanded: Bool
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        SectionCard {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Text(title)
+                        .font(.system(.headline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(AppTheme.text)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppTheme.muted)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    content
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
     }
 }
 
@@ -663,24 +847,5 @@ private struct FlowLayout<Content: View>: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: spacing)], alignment: .leading, spacing: spacing) {
             content
         }
-    }
-}
-
-private extension Date {
-    static func fromISO(_ value: String?) -> Date? {
-        guard let value else { return nil }
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: value)
-    }
-
-    var isoDateString: String {
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: self)
     }
 }
