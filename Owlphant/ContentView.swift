@@ -17,7 +17,7 @@ struct ContentView: View {
                     Label("Contacts", systemImage: "person.2.fill")
                 }
 
-            RemindersView()
+            RemindersView(viewModel: contactsViewModel)
                 .tabItem {
                     Label("Reminders", systemImage: "bell.fill")
                 }

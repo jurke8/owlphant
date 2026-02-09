@@ -33,6 +33,7 @@ final class ContactsViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let store = EncryptedContactsStore()
+    private let reminderService = BirthdayReminderService.shared
 
     var filteredContacts: [Contact] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -63,6 +64,7 @@ final class ContactsViewModel: ObservableObject {
             }
 
             contacts = localContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncBirthdayReminders()
             isReady = true
         } catch {
             errorMessage = "Could not load encrypted storage."
@@ -159,6 +161,7 @@ final class ContactsViewModel: ObservableObject {
         do {
             try await store.saveContacts(updatedContacts)
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncBirthdayReminders()
             cancelForm()
         } catch {
             errorMessage = "Could not save contact."
@@ -174,6 +177,7 @@ final class ContactsViewModel: ObservableObject {
         do {
             try await store.saveContacts(updatedContacts)
             contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncBirthdayReminders()
         } catch {
             errorMessage = "Could not delete contact."
         }
@@ -225,5 +229,11 @@ final class ContactsViewModel: ObservableObject {
     private func normalizedOptional(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func syncBirthdayReminders() async {
+        let timingRaw = UserDefaults.standard.string(forKey: BirthdayReminderTiming.storageKey) ?? BirthdayReminderTiming.defaultValue.rawValue
+        let timing = BirthdayReminderTiming.fromStored(timingRaw)
+        await reminderService.syncBirthdays(for: contacts, timing: timing)
     }
 }
