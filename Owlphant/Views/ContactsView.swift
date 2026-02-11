@@ -119,13 +119,31 @@ struct ContactsView: View {
             }
 
             HStack {
-                Text(L10n.tr("contacts.header.recent"))
+                Text(viewModel.sortField.localizedTitle)
                     .font(.system(.headline, design: .rounded).weight(.semibold))
                     .foregroundStyle(AppTheme.text)
                 Spacer()
                 Text(savedContactsText)
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
+            }
+
+            HStack(spacing: 8) {
+                Picker(L10n.tr("contacts.sort.field.title"), selection: $viewModel.sortField) {
+                    ForEach(ContactSortField.allCases, id: \.self) { field in
+                        Text(field.localizedTitle).tag(field)
+                    }
+                }
+                .pickerStyle(.menu)
+                .appInputChrome()
+
+                Picker(L10n.tr("contacts.sort.direction.title"), selection: $viewModel.sortDirection) {
+                    ForEach(ContactSortDirection.allCases, id: \.self) { direction in
+                        Text(direction.localizedTitle).tag(direction)
+                    }
+                }
+                .pickerStyle(.menu)
+                .appInputChrome()
             }
         }
     }
@@ -198,17 +216,6 @@ private struct ContactCardView: View {
                 }
             }
 
-            if contact.coffeeReminderAt != nil || (contact.stayInTouchEveryDays ?? 0) > 0 {
-                FlowLayout(spacing: 6) {
-                    if contact.coffeeReminderAt != nil {
-                        PillView(label: "☕️")
-                    }
-                    if let stayInTouchEveryDays = contact.stayInTouchEveryDays, stayInTouchEveryDays > 0 {
-                        PillView(label: "🤙")
-                    }
-                }
-            }
-
             if !contact.relationships.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -268,12 +275,6 @@ private struct ContactCardView: View {
                 }
             }
 
-            if let notes = contact.notes, !notes.isEmpty {
-                Text(notes)
-                    .font(.system(.footnote, design: .rounded))
-                    .foregroundStyle(AppTheme.muted)
-                    .lineLimit(2)
-            }
         }
     }
 
@@ -327,6 +328,7 @@ private extension RelationshipType {
 
 private struct ContactFormSheet: View {
     @ObservedObject var viewModel: ContactsViewModel
+    @Environment(\.locale) private var locale
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var birthdayYear: Int? = 1990
     @State private var birthdayMonth: Int? = 1
@@ -338,6 +340,7 @@ private struct ContactFormSheet: View {
     @State private var personalExpanded = false
     @State private var relationshipsExpanded = false
     @State private var remindersExpanded = false
+    @State private var isCoffeeDatePickerPresented = false
 
     var body: some View {
         NavigationStack {
@@ -363,6 +366,10 @@ private struct ContactFormSheet: View {
                                 .appInputChrome()
                             TextField(L10n.tr("contacts.form.lastName"), text: binding(\.lastName))
                                 .appInputChrome()
+
+                            Text(L10n.tr("contacts.form.birthday"))
+                                .font(.system(.footnote, design: .rounded).weight(.medium))
+                                .foregroundStyle(AppTheme.muted)
 
                             HStack(spacing: 8) {
                                 Picker(L10n.tr("contacts.form.birthdayDay"), selection: $birthdayDay) {
@@ -494,6 +501,40 @@ private struct ContactFormSheet: View {
                 }
             }
         }
+        .sheet(isPresented: $isCoffeeDatePickerPresented) {
+            NavigationStack {
+                VStack(spacing: 12) {
+                    DatePicker(
+                        L10n.tr("contacts.form.reminder.coffeeDate"),
+                        selection: coffeeReminderDateBinding,
+                        in: Date()...,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.graphical)
+
+                    DatePicker(
+                        "",
+                        selection: coffeeReminderDateBinding,
+                        in: Date()...,
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.wheel)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .navigationTitle(L10n.tr("contacts.form.reminder.coffeeDate"))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.tr("common.ok")) {
+                            isCoffeeDatePickerPresented = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 
     private var photoRow: some View {
@@ -608,13 +649,35 @@ private struct ContactFormSheet: View {
                 .toggleStyle(.switch)
 
             if coffeeReminderEnabledBinding.wrappedValue {
-                DatePicker(
-                    "",
-                    selection: coffeeReminderDateBinding,
-                    in: Date()...,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
+                Button {
+                    isCoffeeDatePickerPresented = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Text(coffeeReminderDateText)
+                            .font(.system(.body, design: .rounded).weight(.medium))
+                            .foregroundStyle(AppTheme.text)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppTheme.surfaceAlt)
+                            .clipShape(Capsule())
+
+                        Text(coffeeReminderTimeText)
+                            .font(.system(.body, design: .rounded).weight(.medium))
+                            .foregroundStyle(AppTheme.text)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppTheme.surfaceAlt)
+                            .clipShape(Capsule())
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "calendar")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(AppTheme.muted)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                 .appInputChrome()
             }
 
@@ -745,6 +808,22 @@ private struct ContactFormSheet: View {
         )
     }
 
+    private var coffeeReminderDateText: String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = locale
+        formatter.dateFormat = "MMM/dd/yy"
+        return formatter.string(from: coffeeReminderDateBinding.wrappedValue)
+    }
+
+    private var coffeeReminderTimeText: String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = locale
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: coffeeReminderDateBinding.wrappedValue)
+    }
+
     private static var monthLabels: [String] {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -811,6 +890,7 @@ private struct FormDisclosureSection<Content: View>: View {
                 VStack(alignment: .leading, spacing: 10) {
                     content
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var contactsViewModel = ContactsViewModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         TabView {
@@ -37,6 +38,9 @@ struct ContentView: View {
             if !contactsViewModel.isReady {
                 await contactsViewModel.bootstrap()
             }
+        }
+        .onChange(of: scenePhase) {
+            contactsViewModel.refreshUpcomingMeetingsIfAuthorized()
         }
     }
 }

@@ -31,6 +31,13 @@
 "contacts.header.searchPlaceholder" = "Pretraži po imenu, mjestu, rođendanu ili bilješkama";
 "contacts.header.recent" = "Nedavno";
 "contacts.header.savedCount" = "%d spremljeno";
+"contacts.sort.field.title" = "Sortiraj po";
+"contacts.sort.field.recent" = "Nedavno";
+"contacts.sort.field.name" = "Imenu";
+"contacts.sort.field.birthdate" = "Datumu rođenja";
+"contacts.sort.direction.title" = "Redoslijed";
+"contacts.sort.direction.ascending" = "Uzlazno";
+"contacts.sort.direction.descending" = "Silazno";
 "contacts.unnamed" = "Neimenovani kontakt";
 "contacts.unknown" = "Nepoznat kontakt";
 "contacts.import.button" = "Uvezi iz adresara";
@@ -68,10 +75,10 @@
 "contacts.form.workPosition" = "Radno mjesto";
 "contacts.form.phones" = "Telefoni (odvojeni zarezom)";
 "contacts.form.emails" = "E-pošta (odvojena zarezom)";
-"contacts.form.facebook" = "Facebook (odvojen zarezom)";
-"contacts.form.linkedin" = "LinkedIn (odvojen zarezom)";
-"contacts.form.instagram" = "Instagram (odvojen zarezom)";
-"contacts.form.x" = "X (odvojen zarezom)";
+"contacts.form.facebook" = "Facebook poveznica";
+"contacts.form.linkedin" = "LinkedIn poveznica";
+"contacts.form.instagram" = "Instagram poveznica";
+"contacts.form.x" = "X poveznica";
 "contacts.form.tags" = "Oznake (odvojene zarezom)";
 "contacts.form.notes" = "Bilješke";
 "contacts.form.save" = "Spremi kontakt";
@@ -114,6 +121,9 @@
 "events.contactReminders.empty" = "Još nema zakazanih podsjetnika za kavu ili ostani u kontaktu.";
 "events.contactReminders.coffee" = "Kava";
 "events.contactReminders.stayInTouch" = "Svakih %d dana";
+"events.meetings.title" = "Nadolazeći sastanci";
+"events.meetings.empty" = "Još nema uvezenih nadolazećih sastanaka.";
+"events.meetings.item.untitled" = "Sastanak bez naslova";
 
 "map.empty.title" = "Još nema mapiranih kontakata";
 "map.empty.subtitle" = "Dodaj mjesto stanovanja kontaktima ili dopusti pristup lokaciji za prikaz tvoje trenutne pozicije.";
@@ -124,9 +134,7 @@
 "map.samePlace.title" = "Isto mjesto";
 
 "settings.appearance.title" = "Izgled";
-"settings.appearance.subtitle" = "Odaberi kako Owlphant izgleda kroz aplikaciju.";
 "settings.language.title" = "Jezik";
-"settings.language.subtitle" = "Odaberi jezik aplikacije.";
 "settings.reminders.title" = "Podsjetnici za rođendane";
 "settings.reminders.add" = "Dodaj podsjetnik";
 "settings.reminders.subtitle" = "Upravljaj podsjetnicima za sve kontakte s rođendanom.";
@@ -140,6 +148,7 @@
 "settings.notifications.unavailable" = "Status obavijesti nije dostupan.";
 "settings.import.title" = "Uvoz kontakata";
 "settings.import.subtitle" = "Uvezi iz adresara i spoji prema podudaranju e-pošte ili telefona.";
+"settings.import.meetings.button" = "Uvezi sastanke iz kalendara";
 
 "settings.addReminder.title" = "Dodaj podsjetnik";
 "settings.addReminder.when" = "Kada";
@@ -162,6 +171,8 @@
 "error.contact.delete" = "Nije moguće izbrisati kontakt.";
 "error.contact.import.permission" = "Za uvoz iz adresara potreban je pristup kontaktima.";
 "error.contact.import.save" = "Nije moguće uvesti kontakte iz adresara.";
+"error.calendar.import.permission" = "Za uvoz sastanaka potreban je pristup kalendaru.";
+"error.calendar.import.load" = "Nije moguće uvesti sastanke iz kalendara.";
 "error.map.resolve" = "Trenutno nije moguće mapirati spremljena mjesta stanovanja. Pokušaj ponovno uskoro.";
 "error.map.load" = "Nije moguće učitati kontakte za prikaz karte.";
 

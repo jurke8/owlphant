@@ -46,6 +46,40 @@ struct EventsView: View {
                         }
 
                         SectionCard {
+                            Text(L10n.tr("events.meetings.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            if viewModel.upcomingMeetings.isEmpty {
+                                Text(L10n.tr("events.meetings.empty"))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(AppTheme.muted)
+                            } else {
+                                ForEach(viewModel.upcomingMeetings.prefix(8)) { meeting in
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(meeting.title)
+                                                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                                                .foregroundStyle(AppTheme.text)
+
+                                            if let details = meetingDetails(for: meeting) {
+                                                Text(details)
+                                                    .font(.system(.footnote, design: .rounded))
+                                                    .foregroundStyle(AppTheme.muted)
+                                                    .lineLimit(2)
+                                            }
+                                        }
+                                        Spacer()
+                                        Text(Self.reminderFormatter.string(from: meeting.startDate))
+                                            .multilineTextAlignment(.trailing)
+                                            .font(.system(.footnote, design: .rounded))
+                                            .foregroundStyle(AppTheme.muted)
+                                    }
+                                }
+                            }
+                        }
+
+                        SectionCard {
                             Text(L10n.tr("events.contactReminders.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
@@ -159,6 +193,15 @@ struct EventsView: View {
             .min()
         guard let date = next else { return L10n.tr("events.next.none") }
         return L10n.format("events.next.value", Self.reminderFormatter.string(from: date))
+    }
+
+    private func meetingDetails(for meeting: UpcomingMeeting) -> String? {
+        let parts = [meeting.location, meeting.calendarName].compactMap {
+            let trimmed = $0?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (trimmed?.isEmpty == false) ? trimmed : nil
+        }
+        guard !parts.isEmpty else { return nil }
+        return parts.joined(separator: " | ")
     }
 
     private var contactCountText: String {

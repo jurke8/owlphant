@@ -31,10 +31,6 @@ struct SettingsView: View {
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
 
-                            Text(L10n.tr("settings.appearance.subtitle"))
-                                .font(.system(.subheadline, design: .rounded))
-                                .foregroundStyle(AppTheme.muted)
-
                             VStack(spacing: 8) {
                                 ForEach(AppearanceMode.allCases) { mode in
                                     appearanceModeRow(mode)
@@ -46,10 +42,6 @@ struct SettingsView: View {
                             Text(L10n.tr("settings.language.title"))
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
-
-                            Text(L10n.tr("settings.language.subtitle"))
-                                .font(.system(.subheadline, design: .rounded))
-                                .foregroundStyle(AppTheme.muted)
 
                             VStack(spacing: 8) {
                                 ForEach(AppLanguage.allCases) { language in
@@ -149,6 +141,15 @@ struct SettingsView: View {
                                 }
                             }
                             .buttonStyle(PrimaryButtonStyle())
+
+                            Divider()
+
+                            Button(L10n.tr("settings.import.meetings.button")) {
+                                Task {
+                                    await viewModel.importUpcomingMeetingsFromCalendar()
+                                }
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
                         }
 
                         SectionCard {
@@ -192,6 +193,16 @@ struct SettingsView: View {
                     }
                 }
             )
+        }
+        .alert(L10n.tr("common.notice"), isPresented: Binding(
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.errorMessage = nil } }
+        )) {
+            Button(L10n.tr("common.ok"), role: .cancel) {
+                viewModel.errorMessage = nil
+            }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 

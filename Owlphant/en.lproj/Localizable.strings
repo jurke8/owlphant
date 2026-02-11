@@ -31,6 +31,13 @@
 "contacts.header.searchPlaceholder" = "Search by name, place, birthday, notes";
 "contacts.header.recent" = "Recent";
 "contacts.header.savedCount" = "%d saved";
+"contacts.sort.field.title" = "Sort by";
+"contacts.sort.field.recent" = "Recent";
+"contacts.sort.field.name" = "Name";
+"contacts.sort.field.birthdate" = "Birthdate";
+"contacts.sort.direction.title" = "Order";
+"contacts.sort.direction.ascending" = "Ascending";
+"contacts.sort.direction.descending" = "Descending";
 "contacts.unnamed" = "Unnamed Contact";
 "contacts.unknown" = "Unknown contact";
 "contacts.import.button" = "Import from address book";
@@ -68,10 +75,10 @@
 "contacts.form.workPosition" = "Work position";
 "contacts.form.phones" = "Phones (comma separated)";
 "contacts.form.emails" = "Emails (comma separated)";
-"contacts.form.facebook" = "Facebook (comma separated)";
-"contacts.form.linkedin" = "LinkedIn (comma separated)";
-"contacts.form.instagram" = "Instagram (comma separated)";
-"contacts.form.x" = "X (comma separated)";
+"contacts.form.facebook" = "Facebook link";
+"contacts.form.linkedin" = "LinkedIn link";
+"contacts.form.instagram" = "Instagram link";
+"contacts.form.x" = "X link";
 "contacts.form.tags" = "Tags (comma separated)";
 "contacts.form.notes" = "Notes";
 "contacts.form.save" = "Save contact";
@@ -114,6 +121,9 @@
 "events.contactReminders.empty" = "No coffee or stay-in-touch reminders scheduled yet.";
 "events.contactReminders.coffee" = "Coffee";
 "events.contactReminders.stayInTouch" = "Every %d days";
+"events.meetings.title" = "Upcoming meetings";
+"events.meetings.empty" = "No upcoming meetings imported yet.";
+"events.meetings.item.untitled" = "Untitled meeting";
 
 "map.empty.title" = "No mapped contacts yet";
 "map.empty.subtitle" = "Add a living place to contacts, or allow location access to show your current position.";
@@ -124,9 +134,7 @@
 "map.samePlace.title" = "Same Place";
 
 "settings.appearance.title" = "Appearance";
-"settings.appearance.subtitle" = "Choose how Owlphant looks across the app.";
 "settings.language.title" = "Language";
-"settings.language.subtitle" = "Choose your app language.";
 "settings.reminders.title" = "Birthday reminders";
 "settings.reminders.add" = "Add reminder";
 "settings.reminders.subtitle" = "Manage reminders for all contacts with a birthday.";
@@ -140,6 +148,7 @@
 "settings.notifications.unavailable" = "Notification status unavailable.";
 "settings.import.title" = "Import contacts";
 "settings.import.subtitle" = "Import from your address book and merge by matching email or phone.";
+"settings.import.meetings.button" = "Import meetings from calendar";
 
 "settings.addReminder.title" = "Add reminder";
 "settings.addReminder.when" = "When";
@@ -162,6 +171,8 @@
 "error.contact.delete" = "Could not delete contact.";
 "error.contact.import.permission" = "Contacts access is needed to import from your address book.";
 "error.contact.import.save" = "Could not import contacts from your address book.";
+"error.calendar.import.permission" = "Calendar access is needed to import meetings.";
+"error.calendar.import.load" = "Could not import meetings from your calendar.";
 "error.map.resolve" = "Could not map saved living places yet. Try again in a moment.";
 "error.map.load" = "Could not load contacts for map view.";
 

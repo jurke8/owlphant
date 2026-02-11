@@ -1,6 +1,38 @@
 import Combine
 import Contacts
+import EventKit
 import Foundation
+
+enum ContactSortField: String, CaseIterable {
+    case recent
+    case name
+    case birthdate
+
+    var localizedTitle: String {
+        switch self {
+        case .recent:
+            return L10n.tr("contacts.sort.field.recent")
+        case .name:
+            return L10n.tr("contacts.sort.field.name")
+        case .birthdate:
+            return L10n.tr("contacts.sort.field.birthdate")
+        }
+    }
+}
+
+enum ContactSortDirection: String, CaseIterable {
+    case ascending
+    case descending
+
+    var localizedTitle: String {
+        switch self {
+        case .ascending:
+            return L10n.tr("contacts.sort.direction.ascending")
+        case .descending:
+            return L10n.tr("contacts.sort.direction.descending")
+        }
+    }
+}
 
 struct ContactFormState {
     var firstName = ""
@@ -34,44 +66,142 @@ final class ContactsViewModel: ObservableObject {
     @Published var isReady = false
     @Published var contacts: [Contact] = []
     @Published var query = ""
+    @Published var sortField: ContactSortField = .recent
+    @Published var sortDirection: ContactSortDirection = .descending
     @Published var isPresentingForm = false
     @Published var form = ContactFormState()
     @Published var selectedContactId: UUID?
     @Published var errorMessage: String?
+    @Published var upcomingMeetings: [UpcomingMeeting] = []
 
     private let store = EncryptedContactsStore()
     private let reminderService = BirthdayReminderService.shared
+    private let eventStore = EKEventStore()
 
     var filteredContacts: [Contact] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !trimmed.isEmpty else { return contacts.sorted { $0.updatedAt > $1.updatedAt } }
+        let filtered: [Contact]
+        if trimmed.isEmpty {
+            filtered = contacts
+        } else {
+            filtered = contacts.filter { contact in
+                let channelText = [
+                    contact.emails.joined(separator: " "),
+                    contact.phones.joined(separator: " "),
+                    (contact.facebook ?? []).joined(separator: " "),
+                    (contact.linkedin ?? []).joined(separator: " "),
+                    (contact.instagram ?? []).joined(separator: " "),
+                    (contact.x ?? []).joined(separator: " "),
+                ].joined(separator: " ")
 
-        return contacts.filter { contact in
-            let channelText = [
-                contact.emails.joined(separator: " "),
-                contact.phones.joined(separator: " "),
-                (contact.facebook ?? []).joined(separator: " "),
-                (contact.linkedin ?? []).joined(separator: " "),
-                (contact.instagram ?? []).joined(separator: " "),
-                (contact.x ?? []).joined(separator: " "),
-            ].joined(separator: " ")
-
-            let haystack = [
-                contact.firstName,
-                contact.lastName,
-                contact.nickname ?? "",
-                contact.birthday ?? "",
-                contact.placeOfBirth ?? "",
-                contact.placeOfLiving ?? "",
-                contact.company ?? "",
-                contact.workPosition ?? "",
-                channelText,
-                contact.notes ?? "",
-                contact.tags.joined(separator: " "),
-            ].joined(separator: " ").lowercased()
-            return haystack.contains(trimmed)
+                let haystack = [
+                    contact.firstName,
+                    contact.lastName,
+                    contact.nickname ?? "",
+                    contact.birthday ?? "",
+                    contact.placeOfBirth ?? "",
+                    contact.placeOfLiving ?? "",
+                    contact.company ?? "",
+                    contact.workPosition ?? "",
+                    channelText,
+                    contact.notes ?? "",
+                    contact.tags.joined(separator: " "),
+                ].joined(separator: " ").lowercased()
+                return haystack.contains(trimmed)
+            }
         }
-        .sorted { $0.updatedAt > $1.updatedAt }
+
+        return filtered.sorted(by: sortComparator)
+    }
+
+    private func sortComparator(_ lhs: Contact, _ rhs: Contact) -> Bool {
+        switch sortField {
+        case .recent:
+            return compareRecent(lhs, rhs)
+        case .name:
+            return compareName(lhs, rhs)
+        case .birthdate:
+            return compareBirthdate(lhs, rhs)
+        }
+    }
+
+    private func compareRecent(_ lhs: Contact, _ rhs: Contact) -> Bool {
+        if lhs.updatedAt != rhs.updatedAt {
+            if sortDirection == .ascending {
+                return lhs.updatedAt < rhs.updatedAt
+            }
+            return lhs.updatedAt > rhs.updatedAt
+        }
+        return tieBreak(lhs, rhs)
+    }
+
+    private func compareName(_ lhs: Contact, _ rhs: Contact) -> Bool {
+        let lhsName = normalizedName(lhs)
+        let rhsName = normalizedName(rhs)
+
+        if lhsName != rhsName {
+            if sortDirection == .ascending {
+                return lhsName < rhsName
+            }
+            return lhsName > rhsName
+        }
+
+        if lhs.updatedAt != rhs.updatedAt {
+            return lhs.updatedAt > rhs.updatedAt
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
+    }
+
+    private func compareBirthdate(_ lhs: Contact, _ rhs: Contact) -> Bool {
+        let lhsBirthdate = birthdateSortKey(for: lhs)
+        let rhsBirthdate = birthdateSortKey(for: rhs)
+
+        switch (lhsBirthdate, rhsBirthdate) {
+        case let (.some(lhsValue), .some(rhsValue)):
+            if lhsValue != rhsValue {
+                if sortDirection == .ascending {
+                    return lhsValue < rhsValue
+                }
+                return lhsValue > rhsValue
+            }
+            return tieBreak(lhs, rhs)
+        case (.some, .none):
+            return true
+        case (.none, .some):
+            return false
+        case (.none, .none):
+            return tieBreak(lhs, rhs)
+        }
+    }
+
+    private func birthdateSortKey(for contact: Contact) -> (Int, Int, Int)? {
+        guard
+            let birthday = contact.birthday,
+            let value = BirthdayValue(rawValue: birthday)
+        else {
+            return nil
+        }
+
+        return (value.year, value.month ?? 13, value.day ?? 32)
+    }
+
+    private func normalizedName(_ contact: Contact) -> String {
+        contact.displayName
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func tieBreak(_ lhs: Contact, _ rhs: Contact) -> Bool {
+        let lhsName = normalizedName(lhs)
+        let rhsName = normalizedName(rhs)
+
+        if lhsName != rhsName {
+            return lhsName < rhsName
+        }
+        if lhs.updatedAt != rhs.updatedAt {
+            return lhs.updatedAt > rhs.updatedAt
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
     }
 
     func bootstrap() async {
@@ -84,6 +214,7 @@ final class ContactsViewModel: ObservableObject {
 
             contacts = localContacts.sorted { $0.updatedAt > $1.updatedAt }
             await syncReminders()
+            refreshUpcomingMeetingsIfAuthorized()
             isReady = true
         } catch {
             errorMessage = L10n.tr("error.storage.load")
@@ -311,6 +442,21 @@ final class ContactsViewModel: ObservableObject {
         }
     }
 
+    func importUpcomingMeetingsFromCalendar() async {
+        do {
+            let hasAccess = try await requestCalendarAccessIfNeeded()
+            guard hasAccess else { return }
+            upcomingMeetings = loadUpcomingMeetings()
+        } catch {
+            errorMessage = L10n.tr("error.calendar.import.load")
+        }
+    }
+
+    func refreshUpcomingMeetingsIfAuthorized() {
+        guard hasCalendarReadAccess else { return }
+        upcomingMeetings = loadUpcomingMeetings()
+    }
+
     var availableRelationshipTargets: [Contact] {
         contacts.filter { $0.id != selectedContactId }.sorted { $0.displayName < $1.displayName }
     }
@@ -496,6 +642,62 @@ final class ContactsViewModel: ObservableObject {
         let digits = trimmed.filter { $0.isWholeNumber }
         guard !digits.isEmpty else { return "" }
         return hasLeadingPlus ? "+\(digits)" : digits
+    }
+
+    private func requestCalendarAccessIfNeeded() async throws -> Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        switch status {
+        case .fullAccess:
+            return true
+        case .writeOnly:
+            errorMessage = L10n.tr("error.calendar.import.permission")
+            return false
+        case .notDetermined:
+            let granted = try await eventStore.requestFullAccessToEvents()
+            if !granted {
+                errorMessage = L10n.tr("error.calendar.import.permission")
+            }
+            return granted
+        case .denied, .restricted:
+            errorMessage = L10n.tr("error.calendar.import.permission")
+            return false
+        @unknown default:
+            errorMessage = L10n.tr("error.calendar.import.permission")
+            return false
+        }
+    }
+
+    private func loadUpcomingMeetings() -> [UpcomingMeeting] {
+        let now = Date()
+        guard let endDate = Calendar.current.date(byAdding: .day, value: 30, to: now) else {
+            return []
+        }
+
+        let predicate = eventStore.predicateForEvents(withStart: now, end: endDate, calendars: nil)
+        let events = eventStore.events(matching: predicate)
+
+        return events
+            .filter { !$0.isAllDay && $0.startDate >= now }
+            .sorted { $0.startDate < $1.startDate }
+            .map { event in
+                UpcomingMeeting(
+                    id: event.eventIdentifier ?? UUID().uuidString,
+                    title: meetingTitle(for: event),
+                    startDate: event.startDate,
+                    location: normalizedOptional(event.location ?? ""),
+                    calendarName: normalizedOptional(event.calendar.title)
+                )
+            }
+    }
+
+    private func meetingTitle(for event: EKEvent) -> String {
+        let title = event.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return title.isEmpty ? L10n.tr("events.meetings.item.untitled") : title
+    }
+
+    private var hasCalendarReadAccess: Bool {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        return status == .fullAccess
     }
 }
 

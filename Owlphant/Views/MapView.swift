@@ -71,35 +71,11 @@ struct PeopleMapView: View {
         .safeAreaInset(edge: .bottom) {
             HStack {
                 Spacer()
-                centerOnUserButton
                 mapResetButton
             }
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
         }
-    }
-
-    private var centerOnUserButton: some View {
-        Button {
-            viewModel.centerOnUserLocation()
-        } label: {
-            Group {
-                if viewModel.isLocatingUser {
-                    ProgressView()
-                        .tint(AppTheme.tint)
-                } else {
-                    Image(systemName: "location.fill")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(AppTheme.text)
-                }
-            }
-            .frame(width: 36, height: 36)
-            .background(.ultraThinMaterial, in: Circle())
-            .overlay(Circle().stroke(AppTheme.stroke, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .disabled(viewModel.isLocatingUser)
-        .accessibilityLabel(L10n.tr("map.accessibility.center"))
     }
 
     private var mapResetButton: some View {
