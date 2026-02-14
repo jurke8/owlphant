@@ -124,6 +124,15 @@
 "events.meetings.title" = "Nadolazeći sastanci";
 "events.meetings.empty" = "Još nema uvezenih nadolazećih sastanaka.";
 "events.meetings.item.untitled" = "Sastanak bez naslova";
+"events.timeline.today" = "Danas";
+"events.timeline.tomorrow" = "Sutra";
+"events.timeline.later" = "Kasnije";
+"events.timeline.empty" = "Nema događaja u ovom razdoblju.";
+"events.item.dateUnknown" = "Bez točnog datuma";
+"events.item.dateOnly" = "%@";
+"events.item.dateTime" = "%@ u %@";
+"events.item.dateWithWeekday" = "%@ - %@";
+"events.item.dateTimeWithWeekday" = "%@ - %@ u %@";
 
 "map.empty.title" = "Još nema mapiranih kontakata";
 "map.empty.subtitle" = "Dodaj mjesto stanovanja kontaktima ili dopusti pristup lokaciji za prikaz tvoje trenutne pozicije.";
@@ -141,6 +150,22 @@
 "settings.reminders.remove" = "Ukloni podsjetnik";
 "settings.reminders.empty" = "Još nema postavljenih podsjetnika.";
 "settings.encryption.note" = "Enkripcija je uključena. Podaci ostaju lokalno.";
+
+"settings.security.title" = "Sigurnost";
+"settings.security.appLock" = "Zahtijevaj Face ID";
+"settings.security.appLock.touchId" = "Zahtijevaj Touch ID";
+"settings.security.appLock.opticId" = "Zahtijevaj Optic ID";
+"settings.security.appLock.subtitle" = "Zaključaj pri napuštanju aplikacije.";
+"settings.security.biometry.available" = "Face ID je dostupan.";
+"settings.security.biometry.unavailable" = "Biometrijska autentifikacija nije dostupna. Koristit će se lozinka uređaja.";
+"settings.security.authFailed" = "Autentifikacija nije uspjela. Zaključavanje aplikacije nije omogućeno.";
+
+"lock.title" = "Owlphant je zaključan";
+"lock.subtitle" = "Dodirni za otključavanje";
+"lock.button" = "Otključaj";
+"lock.authReason" = "Otključaj Owlphant za pristup kontaktima.";
+"lock.verifyReason" = "Potvrdi identitet za omogućavanje zaključavanja aplikacije.";
+
 "settings.notifications.enable" = "Uključi obavijesti";
 "settings.notifications.enabled" = "Obavijesti su uključene.";
 "settings.notifications.disabled" = "Obavijesti su isključene. Uključi ih u postavkama sustava.";

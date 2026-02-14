@@ -124,6 +124,15 @@
 "events.meetings.title" = "Upcoming meetings";
 "events.meetings.empty" = "No upcoming meetings imported yet.";
 "events.meetings.item.untitled" = "Untitled meeting";
+"events.timeline.today" = "Today";
+"events.timeline.tomorrow" = "Tomorrow";
+"events.timeline.later" = "Later";
+"events.timeline.empty" = "No events in this period.";
+"events.item.dateUnknown" = "No exact date";
+"events.item.dateOnly" = "%@";
+"events.item.dateTime" = "%@ at %@";
+"events.item.dateWithWeekday" = "%@ - %@";
+"events.item.dateTimeWithWeekday" = "%@ - %@ at %@";
 
 "map.empty.title" = "No mapped contacts yet";
 "map.empty.subtitle" = "Add a living place to contacts, or allow location access to show your current position.";
@@ -141,6 +150,22 @@
 "settings.reminders.remove" = "Remove reminder";
 "settings.reminders.empty" = "No reminders set yet.";
 "settings.encryption.note" = "Encryption enabled. Data stays local-first.";
+
+"settings.security.title" = "Security";
+"settings.security.appLock" = "Require Face ID";
+"settings.security.appLock.touchId" = "Require Touch ID";
+"settings.security.appLock.opticId" = "Require Optic ID";
+"settings.security.appLock.subtitle" = "Lock when leaving the app.";
+"settings.security.biometry.available" = "Face ID is available.";
+"settings.security.biometry.unavailable" = "Biometric authentication is not available. Device passcode will be used.";
+"settings.security.authFailed" = "Authentication failed. App Lock was not enabled.";
+
+"lock.title" = "Owlphant is locked";
+"lock.subtitle" = "Tap to unlock";
+"lock.button" = "Unlock";
+"lock.authReason" = "Unlock Owlphant to access your contacts.";
+"lock.verifyReason" = "Verify your identity to enable App Lock.";
+
 "settings.notifications.enable" = "Enable notifications";
 "settings.notifications.enabled" = "Notifications are enabled.";
 "settings.notifications.disabled" = "Notifications are disabled. Enable them in system settings.";

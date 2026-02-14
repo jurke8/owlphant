@@ -270,6 +270,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Allow calendar access to import upcoming meetings.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts access to import names, emails, and phone numbers.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock Owlphant to access your contacts.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location access to show your current position on the map.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow access to photos to add contact pictures.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -306,6 +307,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Allow calendar access to import upcoming meetings.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow contacts access to import names, emails, and phone numbers.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Unlock Owlphant to access your contacts.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Allow location access to show your current position on the map.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow access to photos to add contact pictures.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

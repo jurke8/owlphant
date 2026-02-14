@@ -1,16 +1,19 @@
 import Contacts
 import ContactsUI
+import LocalAuthentication
 import SwiftUI
 import UserNotifications
 
 struct SettingsView: View {
     @ObservedObject var viewModel: ContactsViewModel
+    @EnvironmentObject var appLockService: AppLockService
     @AppStorage(AppearanceMode.storageKey) private var appearanceModeRawValue: String = AppearanceMode.system.rawValue
     @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue: String = AppLanguage.defaultValue.rawValue
     @State private var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @State private var reminderRules: [BirthdayReminderRule] = []
     @State private var isPresentingAddReminder = false
     @State private var isPresentingAddressBookPicker = false
+    @State private var appLockAuthFailed = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var appearanceMode: AppearanceMode {
@@ -48,6 +51,16 @@ struct SettingsView: View {
                                     languageRow(language)
                                 }
                             }
+                        }
+
+                        SectionCard {
+                            Text(L10n.tr("settings.security.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            appLockToggleRow
+
+                            appLockStatusRow
                         }
 
                         SectionCard {
@@ -204,7 +217,94 @@ struct SettingsView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        .alert(L10n.tr("common.notice"), isPresented: $appLockAuthFailed) {
+            Button(L10n.tr("common.ok"), role: .cancel) {}
+        } message: {
+            Text(L10n.tr("settings.security.authFailed"))
+        }
     }
+
+    // MARK: - App Lock
+
+    private var appLockToggleLabel: String {
+        switch appLockService.biometryType {
+        case .touchID:
+            return L10n.tr("settings.security.appLock.touchId")
+        case .opticID:
+            return L10n.tr("settings.security.appLock.opticId")
+        default:
+            return L10n.tr("settings.security.appLock")
+        }
+    }
+
+    private var appLockToggleRow: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(appLockToggleLabel)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.text)
+
+                Text(L10n.tr("settings.security.appLock.subtitle"))
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundStyle(AppTheme.muted)
+            }
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { appLockService.isEnabled },
+                set: { newValue in
+                    if newValue {
+                        Task {
+                            let success = await appLockService.verifyCanAuthenticate()
+                            if success {
+                                appLockService.isEnabled = true
+                            } else {
+                                appLockService.isEnabled = false
+                                appLockAuthFailed = true
+                            }
+                        }
+                    } else {
+                        appLockService.isEnabled = false
+                    }
+                }
+            ))
+            .labelsHidden()
+            .tint(AppTheme.tint)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(AppTheme.surfaceAlt.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(appLockService.isEnabled ? AppTheme.tint.opacity(0.55) : AppTheme.stroke, lineWidth: 1)
+        )
+    }
+
+    private var appLockStatusRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: appLockService.isBiometryAvailable ? appLockService.biometryIconName : "lock.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(appLockService.isBiometryAvailable ? AppTheme.tint : AppTheme.muted)
+            Text(appLockService.isBiometryAvailable
+                 ? L10n.tr("settings.security.biometry.available")
+                 : L10n.tr("settings.security.biometry.unavailable"))
+                .font(.system(.footnote, design: .rounded))
+                .foregroundStyle(AppTheme.muted)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(AppTheme.surfaceAlt.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(AppTheme.stroke, lineWidth: 1)
+        )
+    }
+
+    // MARK: - Appearance
 
     private func appearanceModeRow(_ mode: AppearanceMode) -> some View {
         Button {
