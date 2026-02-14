@@ -7,6 +7,7 @@
 "common.cancel" = "Odustani";
 "common.delete" = "Izbriši";
 "common.remove" = "Ukloni";
+"common.clear" = "Očisti";
 "common.save" = "Spremi";
 "common.notice" = "Obavijest";
 
@@ -80,7 +81,13 @@
 "contacts.form.linkedin" = "LinkedIn poveznica";
 "contacts.form.instagram" = "Instagram poveznica";
 "contacts.form.x" = "X poveznica";
-"contacts.form.tags" = "Oznake (odvojene zarezom)";
+"contacts.form.tags" = "Grupe (odvojene zarezom)";
+"contacts.form.groups.quickAdd" = "Brzo dodaj grupe";
+"contacts.form.groups.createPlaceholder" = "Kreiraj prilagođenu grupu";
+"contacts.form.groups.create" = "Kreiraj";
+"contacts.filters.quick" = "Brzi filteri";
+"contacts.filters.all" = "Sve";
+"contacts.filters.activeCount" = "%d aktivno";
 "contacts.form.notes" = "Bilješke";
 "contacts.form.save" = "Spremi kontakt";
 "contacts.form.update" = "Ažuriraj kontakt";
@@ -150,9 +157,31 @@
 "map.accessibility.reset" = "Resetiraj kartu na početni prikaz";
 "map.group.count" = "%d kontakata na ovoj lokaciji";
 "map.samePlace.title" = "Isto mjesto";
+"map.filters.quick" = "Brzi filteri";
+"map.filters.all" = "Sve";
+"map.filters.activeCount" = "%d aktivno";
 
 "settings.appearance.title" = "Izgled";
 "settings.language.title" = "Jezik";
+"settings.groups.title" = "Grupe";
+"settings.groups.subtitle" = "Upravljaj postojećim grupama kontakata na jednom mjestu.";
+"settings.groups.manage" = "Upravljaj";
+"settings.groups.manageTitle" = "Upravljanje grupama";
+"settings.groups.empty" = "Još nema grupa. Dodaj ih tijekom uređivanja kontakata.";
+"settings.groups.contactsCount" = "%d kontakata";
+"settings.groups.rename" = "Preimenuj";
+"settings.groups.renameTitle" = "Preimenuj grupu";
+"settings.groups.renamePlaceholder" = "Novi naziv grupe";
+"settings.groups.searchPlaceholder" = "Pretraži grupe";
+"settings.groups.searchEmpty" = "Nijedna grupa ne odgovara pretrazi.";
+"settings.groups.merge" = "Spoji";
+"settings.groups.mergeTitle" = "Spoji grupu";
+"settings.groups.mergeInto" = "Spoji u";
+"settings.groups.delete" = "Izbriši";
+"settings.groups.deleteTitle" = "Izbriši grupu";
+"settings.groups.deleteMessage" = "Ukloniti \"%@\" iz %d kontakata?";
+"settings.groups.error.empty" = "Naziv grupe ne može biti prazan.";
+"settings.groups.error.duplicate" = "Grupa s tim nazivom već postoji.";
 "settings.reminders.title" = "Podsjetnici za rođendane";
 "settings.reminders.add" = "Dodaj podsjetnik";
 "settings.reminders.subtitle" = "Upravljaj podsjetnicima za sve kontakte s rođendanom.";

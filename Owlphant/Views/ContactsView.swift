@@ -118,6 +118,52 @@ struct ContactsView: View {
                     .appInputChrome()
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(L10n.tr("contacts.filters.quick"))
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(AppTheme.muted)
+
+                    if viewModel.activeGroupFilterCount > 0 {
+                        Text(L10n.format("contacts.filters.activeCount", viewModel.activeGroupFilterCount))
+                            .font(.system(.caption2, design: .rounded).weight(.bold))
+                            .foregroundStyle(AppTheme.text)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(AppTheme.surfaceAlt)
+                            .clipShape(Capsule())
+                    }
+
+                    if viewModel.activeGroupFilterCount > 0 {
+                        Button(L10n.tr("common.clear")) {
+                            viewModel.clearGroupFilters()
+                        }
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .foregroundStyle(AppTheme.tint)
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        FilterChip(
+                            label: L10n.tr("contacts.filters.all"),
+                            isSelected: viewModel.selectedGroups.isEmpty,
+                            action: { viewModel.clearGroupFilters() }
+                        )
+
+                        ForEach(viewModel.availableGroups, id: \.self) { group in
+                            FilterChip(
+                                label: group,
+                                isSelected: viewModel.isGroupSelected(group),
+                                action: { viewModel.toggleGroupSelection(group) }
+                            )
+                        }
+                    }
+                }
+            }
+
             HStack {
                 Text(viewModel.sortField.localizedTitle)
                     .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -208,10 +254,10 @@ private struct ContactCardView: View {
                     .foregroundStyle(AppTheme.muted)
             }
 
-            if !contact.tags.isEmpty {
+            if !contact.groups.isEmpty {
                 FlowLayout(spacing: 6) {
-                    ForEach(contact.tags.prefix(3), id: \.self) { tag in
-                        PillView(label: tag)
+                    ForEach(contact.groups.prefix(3), id: \.self) { group in
+                        PillView(label: group)
                     }
                 }
             }
@@ -381,6 +427,7 @@ private struct ContactFormSheet: View {
     @State private var remindersExpanded = false
     @State private var isCoffeeDatePickerPresented = false
     @State private var hasInteractedWithForm = false
+    @State private var groupDraft = ""
 
     var body: some View {
         NavigationStack {
@@ -484,8 +531,7 @@ private struct ContactFormSheet: View {
                         FormDisclosureSection(title: L10n.tr("contacts.form.section.personal"), isExpanded: $personalExpanded) {
                             TextField(L10n.tr("contacts.form.nickname"), text: binding(\.nickname))
                                 .appInputChrome()
-                            TextField(L10n.tr("contacts.form.tags"), text: binding(\.tags))
-                                .appInputChrome()
+                            groupEditor
                             TextField(L10n.tr("contacts.form.notes"), text: binding(\.notes), axis: .vertical)
                                 .lineLimit(3...5)
                                 .appInputChrome()
@@ -619,6 +665,49 @@ private struct ContactFormSheet: View {
                 .foregroundStyle(AppTheme.muted)
             }
             Spacer()
+        }
+    }
+
+    private var groupEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField(L10n.tr("contacts.form.tags"), text: binding(\.tags))
+                .appInputChrome()
+
+            Text(L10n.tr("contacts.form.groups.quickAdd"))
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(AppTheme.muted)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(viewModel.availableGroups, id: \.self) { group in
+                        FilterChip(
+                            label: group,
+                            isSelected: selectedDraftGroups.contains(where: { normalizeGroup($0) == normalizeGroup(group) }),
+                            action: { toggleDraftGroup(group) }
+                        )
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                TextField(L10n.tr("contacts.form.groups.createPlaceholder"), text: $groupDraft)
+                    .appInputChrome()
+
+                Button {
+                    addGroupFromDraft()
+                } label: {
+                    Text(L10n.tr("contacts.form.groups.create"))
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 9)
+                        .background(AppTheme.tint)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(groupDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
         }
     }
 
@@ -832,6 +921,61 @@ private struct ContactFormSheet: View {
             }
             return lhs.type.sortRank < rhs.type.sortRank
         }
+    }
+
+    private var selectedDraftGroups: [String] {
+        parseGroups(viewModel.form.tags)
+    }
+
+    private func addGroupFromDraft() {
+        let trimmed = groupDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        toggleDraftGroup(trimmed, forceInsert: true)
+        groupDraft = ""
+    }
+
+    private func toggleDraftGroup(_ group: String, forceInsert: Bool = false) {
+        let trimmed = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let targetKey = normalizeGroup(trimmed)
+        var groups = selectedDraftGroups
+
+        if let existingIndex = groups.firstIndex(where: { normalizeGroup($0) == targetKey }) {
+            if forceInsert {
+                groups[existingIndex] = trimmed
+            } else {
+                groups.remove(at: existingIndex)
+            }
+        } else {
+            groups.append(trimmed)
+        }
+
+        hasInteractedWithForm = true
+        viewModel.form.tags = groups.joined(separator: ", ")
+    }
+
+    private func parseGroups(_ value: String) -> [String] {
+        var seen: Set<String> = []
+        var result: [String] = []
+
+        for part in value.split(separator: ",") {
+            let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = normalizeGroup(trimmed)
+            guard !seen.contains(key) else { continue }
+            seen.insert(key)
+            result.append(trimmed)
+        }
+
+        return result
+    }
+
+    private func normalizeGroup(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 
     private var sortedDraftInteractions: [ContactInteraction] {

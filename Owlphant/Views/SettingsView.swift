@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var selectedBackupURL: URL?
     @State private var backupStatusMessage: String?
     @State private var appLockAuthFailed = false
+    @State private var isPresentingManageGroups = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var appearanceMode: AppearanceMode {
@@ -60,6 +61,63 @@ struct SettingsView: View {
                             VStack(spacing: 8) {
                                 ForEach(AppLanguage.allCases) { language in
                                     languageRow(language)
+                                }
+                            }
+                        }
+
+                        SectionCard {
+                            HStack {
+                                Text(L10n.tr("settings.groups.title"))
+                                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(AppTheme.text)
+                                Spacer()
+                                Button(L10n.tr("settings.groups.manage")) {
+                                    isPresentingManageGroups = true
+                                }
+                                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                                .buttonStyle(.plain)
+                                .foregroundStyle(AppTheme.tint)
+                            }
+
+                            Text(L10n.tr("settings.groups.subtitle"))
+                                .font(.system(.footnote, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+
+                            if viewModel.groupsWithUsage.isEmpty {
+                                Text(L10n.tr("settings.groups.empty"))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(AppTheme.muted)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .background(AppTheme.surfaceAlt.opacity(0.5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(AppTheme.stroke, lineWidth: 1)
+                                    )
+                            } else {
+                                ForEach(viewModel.groupsWithUsage.prefix(4), id: \.id) { group in
+                                    HStack {
+                                        Text(group.name)
+                                            .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                            .foregroundStyle(AppTheme.text)
+                                            .lineLimit(1)
+
+                                        Spacer()
+
+                                        Text(L10n.format("settings.groups.contactsCount", group.count))
+                                            .font(.system(.caption, design: .rounded))
+                                            .foregroundStyle(AppTheme.muted)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .background(AppTheme.surfaceAlt.opacity(0.5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(AppTheme.stroke, lineWidth: 1)
+                                    )
                                 }
                             }
                         }
@@ -241,6 +299,9 @@ struct SettingsView: View {
                     }
                 }
             )
+        }
+        .sheet(isPresented: $isPresentingManageGroups) {
+            ManageGroupsSheet(viewModel: viewModel)
         }
         .sheet(isPresented: $isPresentingExportPassphraseSheet) {
             backupPassphraseSheet(
@@ -712,6 +773,270 @@ private struct AddressBookContactPicker: UIViewControllerRepresentable {
         func contactPicker(_ picker: CNContactPickerViewController, didSelect contacts: [CNContact]) {
             onSelect(contacts)
         }
+    }
+}
+
+private struct ManageGroupsSheet: View {
+    @ObservedObject var viewModel: ContactsViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var pendingRename: ContactsViewModel.GroupUsage?
+    @State private var renameValue = ""
+    @State private var pendingMerge: ContactsViewModel.GroupUsage?
+    @State private var mergeTargetID = ""
+    @State private var pendingDelete: ContactsViewModel.GroupUsage?
+    @State private var localErrorMessage: String?
+    @State private var groupSearchQuery = ""
+
+    var body: some View {
+        NavigationStack {
+            ScreenBackground {
+                ScrollView {
+                    VStack(spacing: 12) {
+                        if viewModel.groupsWithUsage.isEmpty {
+                            SectionCard {
+                                Text(L10n.tr("settings.groups.empty"))
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundStyle(AppTheme.muted)
+                            }
+                        } else {
+                            SectionCard {
+                                TextField(L10n.tr("settings.groups.searchPlaceholder"), text: $groupSearchQuery)
+                                    .textInputAutocapitalization(.never)
+                                    .appInputChrome()
+                            }
+
+                            SectionCard {
+                                if filteredGroups.isEmpty {
+                                    Text(L10n.tr("settings.groups.searchEmpty"))
+                                        .font(.system(.subheadline, design: .rounded))
+                                        .foregroundStyle(AppTheme.muted)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(AppTheme.surfaceAlt.opacity(0.5))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(AppTheme.stroke, lineWidth: 1)
+                                        )
+                                } else {
+                                    ForEach(filteredGroups) { group in
+                                        HStack(spacing: 10) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(group.name)
+                                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                                    .foregroundStyle(AppTheme.text)
+                                                Text(L10n.format("settings.groups.contactsCount", group.count))
+                                                    .font(.system(.caption, design: .rounded))
+                                                    .foregroundStyle(AppTheme.muted)
+                                            }
+
+                                            Spacer()
+
+                                            Menu {
+                                                Button(L10n.tr("settings.groups.rename")) {
+                                                    renameValue = group.name
+                                                    pendingRename = group
+                                                }
+
+                                                if viewModel.groupsWithUsage.count > 1 {
+                                                    Button(L10n.tr("settings.groups.merge")) {
+                                                        mergeTargetID = mergeTargets(for: group).first?.id ?? ""
+                                                        pendingMerge = group
+                                                    }
+                                                }
+
+                                                Button(L10n.tr("settings.groups.delete"), role: .destructive) {
+                                                    pendingDelete = group
+                                                }
+                                            } label: {
+                                                Image(systemName: "ellipsis.circle")
+                                                    .font(.system(size: 18, weight: .semibold))
+                                                    .foregroundStyle(AppTheme.muted)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .background(AppTheme.surfaceAlt.opacity(0.5))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(AppTheme.stroke, lineWidth: 1)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle(L10n.tr("settings.groups.manageTitle"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(L10n.tr("common.ok")) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .sheet(item: $pendingRename) { group in
+            NavigationStack {
+                ScreenBackground {
+                    VStack(spacing: 12) {
+                        SectionCard {
+                            Text(L10n.tr("settings.groups.renameTitle"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            TextField(L10n.tr("settings.groups.renamePlaceholder"), text: $renameValue)
+                                .appInputChrome()
+
+                            Button(L10n.tr("common.save")) {
+                                submitRename(for: group)
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                        }
+                    }
+                    .padding(20)
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(L10n.tr("common.cancel")) {
+                            pendingRename = nil
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(item: $pendingMerge) { source in
+            NavigationStack {
+                ScreenBackground {
+                    VStack(spacing: 12) {
+                        SectionCard {
+                            Text(L10n.tr("settings.groups.mergeTitle"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            Picker(L10n.tr("settings.groups.mergeInto"), selection: $mergeTargetID) {
+                                ForEach(mergeTargets(for: source)) { target in
+                                    Text(target.name).tag(target.id)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .appInputChrome()
+
+                            Button(L10n.tr("settings.groups.merge")) {
+                                submitMerge(for: source)
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                            .disabled(mergeTargetID.isEmpty)
+                        }
+                    }
+                    .padding(20)
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(L10n.tr("common.cancel")) {
+                            pendingMerge = nil
+                        }
+                    }
+                }
+            }
+        }
+        .alert(L10n.tr("settings.groups.deleteTitle"), isPresented: Binding(
+            get: { pendingDelete != nil },
+            set: { if !$0 { pendingDelete = nil } }
+        )) {
+            Button(L10n.tr("common.cancel"), role: .cancel) {
+                pendingDelete = nil
+            }
+            Button(L10n.tr("settings.groups.delete"), role: .destructive) {
+                guard let pendingDelete else { return }
+                Task {
+                    _ = await viewModel.deleteGroup(pendingDelete.name)
+                    self.pendingDelete = nil
+                }
+            }
+        } message: {
+            if let pendingDelete {
+                Text(L10n.format("settings.groups.deleteMessage", pendingDelete.name, pendingDelete.count))
+            }
+        }
+        .alert(L10n.tr("common.notice"), isPresented: Binding(
+            get: { localErrorMessage != nil },
+            set: { if !$0 { localErrorMessage = nil } }
+        )) {
+            Button(L10n.tr("common.ok"), role: .cancel) {
+                localErrorMessage = nil
+            }
+        } message: {
+            Text(localErrorMessage ?? "")
+        }
+    }
+
+    private func mergeTargets(for source: ContactsViewModel.GroupUsage) -> [ContactsViewModel.GroupUsage] {
+        viewModel.groupsWithUsage.filter { $0.id != source.id }
+    }
+
+    private var filteredGroups: [ContactsViewModel.GroupUsage] {
+        let trimmed = groupSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return viewModel.groupsWithUsage }
+
+        let normalizedQuery = normalizeGroup(trimmed)
+        return viewModel.groupsWithUsage.filter { group in
+            normalizeGroup(group.name).contains(normalizedQuery)
+        }
+    }
+
+    private func submitRename(for group: ContactsViewModel.GroupUsage) {
+        let trimmed = renameValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            localErrorMessage = L10n.tr("settings.groups.error.empty")
+            return
+        }
+
+        let normalizedTarget = normalizeGroup(trimmed)
+        let duplicateExists = viewModel.groupsWithUsage.contains { usage in
+            usage.id != group.id && usage.id == normalizedTarget
+        }
+
+        guard !duplicateExists else {
+            localErrorMessage = L10n.tr("settings.groups.error.duplicate")
+            return
+        }
+
+        Task {
+            let didUpdate = await viewModel.renameGroup(from: group.name, to: trimmed)
+            if didUpdate {
+                pendingRename = nil
+            }
+        }
+    }
+
+    private func submitMerge(for source: ContactsViewModel.GroupUsage) {
+        guard let target = mergeTargets(for: source).first(where: { $0.id == mergeTargetID }) else {
+            return
+        }
+
+        Task {
+            let didUpdate = await viewModel.mergeGroup(source: source.name, into: target.name)
+            if didUpdate {
+                pendingMerge = nil
+            }
+        }
+    }
+
+    private func normalizeGroup(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 }
 

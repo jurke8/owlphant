@@ -67,9 +67,16 @@ struct ContactFormState {
 
 @MainActor
 final class ContactsViewModel: ObservableObject {
+    struct GroupUsage: Identifiable {
+        let id: String
+        let name: String
+        let count: Int
+    }
+
     @Published var isReady = false
     @Published var contacts: [Contact] = []
     @Published var query = ""
+    @Published var selectedGroups: Set<String> = []
     @Published var sortField: ContactSortField = .recent
     @Published var sortDirection: ContactSortDirection = .descending
     @Published var isPresentingForm = false
@@ -82,6 +89,7 @@ final class ContactsViewModel: ObservableObject {
     private let backupService = EncryptedBackupService()
     private let reminderService = BirthdayReminderService.shared
     private let eventStore = EKEventStore()
+    private static let suggestedGroups = ["Work", "Family", "Networking"]
 
     private enum SocialValidationError: Error {
         case invalidURL
@@ -90,7 +98,7 @@ final class ContactsViewModel: ObservableObject {
 
     var filteredContacts: [Contact] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let filtered: [Contact]
+        var filtered: [Contact]
         if trimmed.isEmpty {
             filtered = contacts
         } else {
@@ -116,13 +124,141 @@ final class ContactsViewModel: ObservableObject {
                     channelText,
                     contact.notes ?? "",
                     contact.interactions.map(\.note).joined(separator: " "),
-                    contact.tags.joined(separator: " "),
+                    contact.groups.joined(separator: " "),
                 ].joined(separator: " ").lowercased()
                 return haystack.contains(trimmed)
             }
         }
 
+        let normalizedSelectedGroups = Set(selectedGroups.map(normalizeGroupKey))
+        if !normalizedSelectedGroups.isEmpty {
+            filtered = filtered.filter { contact in
+                let normalizedContactGroups = Set(contact.groups.map(normalizeGroupKey))
+                return !normalizedContactGroups.isDisjoint(with: normalizedSelectedGroups)
+            }
+        }
+
         return filtered.sorted(by: sortComparator)
+    }
+
+    var availableGroups: [String] {
+        var canonicalGroups: [String: String] = [:]
+
+        func add(_ value: String) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+            let key = normalizeGroupKey(trimmed)
+            guard canonicalGroups[key] == nil else { return }
+            canonicalGroups[key] = trimmed
+        }
+
+        for group in Self.suggestedGroups {
+            add(group)
+        }
+
+        for contact in contacts {
+            for group in contact.groups {
+                add(group)
+            }
+        }
+
+        return canonicalGroups.values.sorted { lhs, rhs in
+            normalizeGroupKey(lhs) < normalizeGroupKey(rhs)
+        }
+    }
+
+    var activeGroupFilterCount: Int {
+        selectedGroups.count
+    }
+
+    var groupsWithUsage: [GroupUsage] {
+        var counts: [String: Int] = [:]
+        var canonicalNames: [String: String] = [:]
+
+        for contact in contacts {
+            var seenInContact: Set<String> = []
+
+            for rawGroup in contact.groups {
+                let trimmed = rawGroup.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { continue }
+
+                let key = normalizeGroupKey(trimmed)
+                guard !seenInContact.contains(key) else { continue }
+
+                seenInContact.insert(key)
+                canonicalNames[key] = canonicalNames[key] ?? trimmed
+                counts[key, default: 0] += 1
+            }
+        }
+
+        return counts.keys
+            .sorted { lhs, rhs in
+                (canonicalNames[lhs] ?? lhs).localizedCaseInsensitiveCompare(canonicalNames[rhs] ?? rhs) == .orderedAscending
+            }
+            .map { key in
+                GroupUsage(
+                    id: key,
+                    name: canonicalNames[key] ?? key,
+                    count: counts[key] ?? 0
+                )
+            }
+    }
+
+    func isGroupSelected(_ group: String) -> Bool {
+        let key = normalizeGroupKey(group)
+        return selectedGroups.contains { normalizeGroupKey($0) == key }
+    }
+
+    func toggleGroupSelection(_ group: String) {
+        let trimmed = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let key = normalizeGroupKey(trimmed)
+        if let existing = selectedGroups.first(where: { normalizeGroupKey($0) == key }) {
+            selectedGroups.remove(existing)
+        } else {
+            selectedGroups.insert(trimmed)
+        }
+    }
+
+    func clearGroupFilters() {
+        selectedGroups.removeAll()
+    }
+
+    func renameGroup(from source: String, to target: String) async -> Bool {
+        let sourceKey = normalizeGroupKey(source)
+        let targetValue = target.trimmingCharacters(in: .whitespacesAndNewlines)
+        let targetKey = normalizeGroupKey(targetValue)
+
+        guard !sourceKey.isEmpty, !targetKey.isEmpty else { return false }
+
+        return await applyGroupMutation(
+            replacements: [sourceKey: targetValue],
+            removed: []
+        )
+    }
+
+    func mergeGroup(source: String, into target: String) async -> Bool {
+        let sourceKey = normalizeGroupKey(source)
+        let targetValue = target.trimmingCharacters(in: .whitespacesAndNewlines)
+        let targetKey = normalizeGroupKey(targetValue)
+
+        guard !sourceKey.isEmpty, !targetKey.isEmpty, sourceKey != targetKey else { return false }
+
+        return await applyGroupMutation(
+            replacements: [sourceKey: targetValue],
+            removed: []
+        )
+    }
+
+    func deleteGroup(_ group: String) async -> Bool {
+        let key = normalizeGroupKey(group)
+        guard !key.isEmpty else { return false }
+
+        return await applyGroupMutation(
+            replacements: [:],
+            removed: [key]
+        )
     }
 
     private func sortComparator(_ lhs: Contact, _ rhs: Contact) -> Bool {
@@ -599,6 +735,82 @@ final class ContactsViewModel: ObservableObject {
             .split(separator: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
+    }
+
+    private func applyGroupMutation(replacements: [String: String], removed: Set<String>) async -> Bool {
+        let now = Date().timeIntervalSince1970
+        var updatedContacts = contacts
+        var didChange = false
+
+        for index in updatedContacts.indices {
+            let current = updatedContacts[index]
+            let normalized = normalizedGroups(from: current.groups, replacements: replacements, removed: removed)
+
+            guard normalized.changed else { continue }
+
+            didChange = true
+            updatedContacts[index].groups = normalized.groups
+            updatedContacts[index].updatedAt = now
+        }
+
+        guard didChange else { return false }
+
+        do {
+            try await store.saveContacts(updatedContacts)
+            contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            return true
+        } catch {
+            errorMessage = L10n.tr("error.contact.save")
+            return false
+        }
+    }
+
+    private func normalizedGroups(from groups: [String], replacements: [String: String], removed: Set<String>) -> (groups: [String], changed: Bool) {
+        var seen: Set<String> = []
+        var result: [String] = []
+        var changed = false
+
+        for rawGroup in groups {
+            let trimmed = rawGroup.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                changed = true
+                continue
+            }
+
+            let rawKey = normalizeGroupKey(trimmed)
+            if removed.contains(rawKey) {
+                changed = true
+                continue
+            }
+
+            let replacement = replacements[rawKey]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? trimmed
+            guard !replacement.isEmpty else {
+                changed = true
+                continue
+            }
+
+            let replacementKey = normalizeGroupKey(replacement)
+            if seen.contains(replacementKey) {
+                changed = true
+                continue
+            }
+
+            seen.insert(replacementKey)
+            result.append(replacement)
+
+            if replacement != rawGroup {
+                changed = true
+            }
+        }
+
+        return (result, changed)
+    }
+
+    private func normalizeGroupKey(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 
     private func parseOptionalCSV(_ value: String) -> [String]? {

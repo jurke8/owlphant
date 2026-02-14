@@ -125,6 +125,11 @@ struct Contact: Codable, Identifiable, Hashable {
     var stayInTouchEveryDays: Int?
     var updatedAt: TimeInterval
 
+    var groups: [String] {
+        get { tags }
+        set { tags = newValue }
+    }
+
     var displayName: String {
         let combined = "\(firstName) \(lastName)".trimmingCharacters(in: .whitespacesAndNewlines)
         if !combined.isEmpty {

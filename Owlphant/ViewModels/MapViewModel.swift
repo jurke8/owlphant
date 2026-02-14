@@ -35,6 +35,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     @Published var isLoading = false
     @Published var isLocatingUser = false
     @Published var pins: [ContactMapPin] = []
+    @Published var selectedGroups: Set<String> = []
     @Published var cameraPosition: MapCameraPosition = .automatic
     @Published var userCoordinate: CLLocationCoordinate2D?
     @Published var selectedContact: Contact?
@@ -44,6 +45,8 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private let store = EncryptedContactsStore()
     private let locationManager = CLLocationManager()
     private var locationCache: [String: CLLocationCoordinate2D] = [:]
+    private var allContacts: [Contact] = []
+    private static let suggestedGroups = ["Work", "Family", "Networking"]
 
     override init() {
         super.init()
@@ -88,7 +91,9 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
         do {
             let contacts = try await store.loadContacts()
-            let validContacts = contacts.compactMap { contact -> (Contact, String, String)? in
+            allContacts = contacts
+            let filteredByGroups = applySelectedGroupFilters(to: contacts)
+            let validContacts = filteredByGroups.compactMap { contact -> (Contact, String, String)? in
                 guard let rawPlace = contact.placeOfLiving?.trimmingCharacters(in: .whitespacesAndNewlines), !rawPlace.isEmpty else {
                     return nil
                 }
@@ -130,6 +135,67 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         }
     }
 
+    var availableGroups: [String] {
+        var canonicalGroups: [String: String] = [:]
+
+        func add(_ value: String) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+            let key = normalizeGroupKey(trimmed)
+            guard canonicalGroups[key] == nil else { return }
+            canonicalGroups[key] = trimmed
+        }
+
+        for group in Self.suggestedGroups {
+            add(group)
+        }
+
+        for contact in allContacts {
+            for group in contact.groups {
+                add(group)
+            }
+        }
+
+        return canonicalGroups.values.sorted { lhs, rhs in
+            normalizeGroupKey(lhs) < normalizeGroupKey(rhs)
+        }
+    }
+
+    var activeGroupFilterCount: Int {
+        selectedGroups.count
+    }
+
+    func isGroupSelected(_ group: String) -> Bool {
+        let key = normalizeGroupKey(group)
+        return selectedGroups.contains { normalizeGroupKey($0) == key }
+    }
+
+    func toggleGroupSelection(_ group: String) {
+        let trimmed = group.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let key = normalizeGroupKey(trimmed)
+        if let existing = selectedGroups.first(where: { normalizeGroupKey($0) == key }) {
+            selectedGroups.remove(existing)
+        } else {
+            selectedGroups.insert(trimmed)
+        }
+    }
+
+    func clearGroupFilters() {
+        selectedGroups.removeAll()
+    }
+
+    private func applySelectedGroupFilters(to contacts: [Contact]) -> [Contact] {
+        let normalizedSelectedGroups = Set(selectedGroups.map(normalizeGroupKey))
+        guard !normalizedSelectedGroups.isEmpty else { return contacts }
+
+        return contacts.filter { contact in
+            let normalizedContactGroups = Set(contact.groups.map(normalizeGroupKey))
+            return !normalizedContactGroups.isDisjoint(with: normalizedSelectedGroups)
+        }
+    }
+
     private func geocode(place: String) async -> CLLocationCoordinate2D? {
         do {
             let request = MKLocalSearch.Request()
@@ -162,6 +228,13 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private func normalizePlace(_ place: String) -> String {
         place
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+    }
+
+    private func normalizeGroupKey(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
             .lowercased()
     }
 

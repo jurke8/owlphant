@@ -9,13 +9,17 @@ struct PeopleMapView: View {
             Group {
                 if viewModel.pins.isEmpty && viewModel.userCoordinate == nil {
                     ScreenBackground {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(L10n.tr("map.empty.title"))
-                                .font(.system(.headline, design: .rounded).weight(.semibold))
-                                .foregroundStyle(AppTheme.text)
-                            Text(L10n.tr("map.empty.subtitle"))
-                                .font(.system(.body, design: .rounded))
-                                .foregroundStyle(AppTheme.muted)
+                        VStack(alignment: .leading, spacing: 12) {
+                            mapFiltersBar
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(L10n.tr("map.empty.title"))
+                                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(AppTheme.text)
+                                Text(L10n.tr("map.empty.subtitle"))
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundStyle(AppTheme.muted)
+                            }
                         }
                         .padding(20)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -30,6 +34,12 @@ struct PeopleMapView: View {
         }
         .task {
             await viewModel.reload()
+        }
+        .onAppear {
+            Task { await viewModel.reload() }
+        }
+        .onChange(of: viewModel.selectedGroups) { _, _ in
+            Task { await viewModel.reload() }
         }
         .sheet(item: $viewModel.selectedContact) { contact in
             MapContactDetailsView(contact: contact)
@@ -76,6 +86,65 @@ struct PeopleMapView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
         }
+        .safeAreaInset(edge: .top) {
+            mapFiltersBar
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+        }
+    }
+
+    private var mapFiltersBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text(L10n.tr("map.filters.quick"))
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(AppTheme.muted)
+
+                if viewModel.activeGroupFilterCount > 0 {
+                    Text(L10n.format("map.filters.activeCount", viewModel.activeGroupFilterCount))
+                        .font(.system(.caption2, design: .rounded).weight(.bold))
+                        .foregroundStyle(AppTheme.text)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(AppTheme.surfaceAlt)
+                        .clipShape(Capsule())
+                }
+
+                if viewModel.activeGroupFilterCount > 0 {
+                    Button(L10n.tr("common.clear")) {
+                        viewModel.clearGroupFilters()
+                    }
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.tint)
+                    .buttonStyle(.plain)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    FilterChip(
+                        label: L10n.tr("map.filters.all"),
+                        isSelected: viewModel.selectedGroups.isEmpty,
+                        action: { viewModel.clearGroupFilters() }
+                    )
+
+                    ForEach(viewModel.availableGroups, id: \.self) { group in
+                        FilterChip(
+                            label: group,
+                            isSelected: viewModel.isGroupSelected(group),
+                            action: { viewModel.toggleGroupSelection(group) }
+                        )
+                    }
+                }
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AppTheme.stroke.opacity(0.8), lineWidth: 1)
+        )
     }
 
     private var mapResetButton: some View {

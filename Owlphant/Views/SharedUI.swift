@@ -74,6 +74,29 @@ struct PillView: View {
     }
 }
 
+struct FilterChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .foregroundStyle(isSelected ? Color.white : AppTheme.text)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(isSelected ? AppTheme.tint : AppTheme.surfaceAlt)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? AppTheme.tint : AppTheme.stroke, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 private struct AppInputChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
         content

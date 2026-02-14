@@ -7,6 +7,7 @@
 "common.cancel" = "Cancel";
 "common.delete" = "Delete";
 "common.remove" = "Remove";
+"common.clear" = "Clear";
 "common.save" = "Save";
 "common.notice" = "Notice";
 
@@ -80,7 +81,13 @@
 "contacts.form.linkedin" = "LinkedIn link";
 "contacts.form.instagram" = "Instagram link";
 "contacts.form.x" = "X link";
-"contacts.form.tags" = "Tags (comma separated)";
+"contacts.form.tags" = "Groups (comma separated)";
+"contacts.form.groups.quickAdd" = "Quick add groups";
+"contacts.form.groups.createPlaceholder" = "Create custom group";
+"contacts.form.groups.create" = "Create";
+"contacts.filters.quick" = "Quick filters";
+"contacts.filters.all" = "All";
+"contacts.filters.activeCount" = "%d active";
 "contacts.form.notes" = "Notes";
 "contacts.form.save" = "Save contact";
 "contacts.form.update" = "Update contact";
@@ -150,9 +157,31 @@
 "map.accessibility.reset" = "Reset map to initial view";
 "map.group.count" = "%d contacts in this place";
 "map.samePlace.title" = "Same Place";
+"map.filters.quick" = "Quick filters";
+"map.filters.all" = "All";
+"map.filters.activeCount" = "%d active";
 
 "settings.appearance.title" = "Appearance";
 "settings.language.title" = "Language";
+"settings.groups.title" = "Groups";
+"settings.groups.subtitle" = "Manage existing contact groups in one place.";
+"settings.groups.manage" = "Manage";
+"settings.groups.manageTitle" = "Manage Groups";
+"settings.groups.empty" = "No groups yet. Add groups while editing contacts.";
+"settings.groups.contactsCount" = "%d contacts";
+"settings.groups.rename" = "Rename";
+"settings.groups.renameTitle" = "Rename group";
+"settings.groups.renamePlaceholder" = "New group name";
+"settings.groups.searchPlaceholder" = "Search groups";
+"settings.groups.searchEmpty" = "No groups match your search.";
+"settings.groups.merge" = "Merge";
+"settings.groups.mergeTitle" = "Merge group";
+"settings.groups.mergeInto" = "Merge into";
+"settings.groups.delete" = "Delete";
+"settings.groups.deleteTitle" = "Delete group";
+"settings.groups.deleteMessage" = "Remove \"%@\" from %d contacts?";
+"settings.groups.error.empty" = "Group name cannot be empty.";
+"settings.groups.error.duplicate" = "A group with this name already exists.";
 "settings.reminders.title" = "Birthday reminders";
 "settings.reminders.add" = "Add reminder";
 "settings.reminders.subtitle" = "Manage reminders for all contacts with a birthday.";
