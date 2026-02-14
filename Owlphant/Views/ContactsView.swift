@@ -216,6 +216,32 @@ private struct ContactCardView: View {
                 }
             }
 
+            if let latestInteraction {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(L10n.tr("contacts.card.lastInteraction"))
+                        .font(.system(.caption, design: .rounded).weight(.medium))
+                        .textCase(.uppercase)
+                        .foregroundStyle(AppTheme.muted)
+
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.tint)
+                            .padding(.top, 2)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(Self.interactionDateFormatter.string(from: Date(timeIntervalSince1970: latestInteraction.date)))
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+                            Text(latestInteraction.note)
+                                .font(.system(.footnote, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+                                .lineLimit(2)
+                        }
+                    }
+                }
+            }
+
             if !contact.relationships.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -308,6 +334,18 @@ private struct ContactCardView: View {
             return lhs.type.sortRank < rhs.type.sortRank
         }
     }
+
+    private var latestInteraction: ContactInteraction? {
+        contact.interactions.max { lhs, rhs in
+            lhs.date < rhs.date
+        }
+    }
+
+    private static let interactionDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("d MMM, HH:mm")
+        return formatter
+    }()
 }
 
 private extension RelationshipType {
@@ -338,6 +376,7 @@ private struct ContactFormSheet: View {
     @State private var workExpanded = false
     @State private var contactChannelsExpanded = false
     @State private var personalExpanded = false
+    @State private var interactionsExpanded = false
     @State private var relationshipsExpanded = false
     @State private var remindersExpanded = false
     @State private var isCoffeeDatePickerPresented = false
@@ -451,6 +490,8 @@ private struct ContactFormSheet: View {
                                 .lineLimit(3...5)
                                 .appInputChrome()
                         }
+
+                        interactionHistorySection
 
                         remindersSection
 
@@ -704,6 +745,86 @@ private struct ContactFormSheet: View {
         }
     }
 
+    private var interactionHistorySection: some View {
+        FormDisclosureSection(title: L10n.tr("contacts.form.section.interactions"), isExpanded: $interactionsExpanded) {
+            DatePicker(
+                L10n.tr("contacts.form.interaction.date"),
+                selection: Binding(
+                    get: { viewModel.form.interactionDraftDate },
+                    set: { newValue in
+                        hasInteractedWithForm = true
+                        viewModel.form.interactionDraftDate = newValue
+                    }
+                ),
+                displayedComponents: [.date, .hourAndMinute]
+            )
+
+            TextField(L10n.tr("contacts.form.interaction.note"), text: binding(\.interactionDraftNote), axis: .vertical)
+                .lineLimit(3...3)
+                .appInputChrome()
+
+            Button(viewModel.form.editingInteractionId == nil ? L10n.tr("contacts.form.interaction.add") : L10n.tr("contacts.form.interaction.update")) {
+                viewModel.addOrUpdateInteractionDraft()
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(!viewModel.canSubmitInteractionDraft)
+
+            if sortedDraftInteractions.isEmpty {
+                Text(L10n.tr("contacts.form.interaction.empty"))
+                    .font(.system(.footnote, design: .rounded))
+                    .foregroundStyle(AppTheme.muted)
+            } else {
+                ForEach(sortedDraftInteractions) { interaction in
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.tint)
+                            .frame(width: 26, height: 26)
+                            .background(AppTheme.tint.opacity(0.12))
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(interactionListDateFormatter.string(from: Date(timeIntervalSince1970: interaction.date)))
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+                            Text(interaction.note)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+                                .lineLimit(3)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            hasInteractedWithForm = true
+                            viewModel.editInteraction(interaction)
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(AppTheme.muted)
+
+                        Button(role: .destructive) {
+                            hasInteractedWithForm = true
+                            viewModel.removeInteraction(interaction)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(AppTheme.surfaceAlt.opacity(0.45))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppTheme.stroke.opacity(0.45), lineWidth: 1)
+                    )
+                }
+            }
+        }
+    }
+
     private var sortedDraftRelationships: [ContactRelationship] {
         viewModel.form.relationships.sorted { lhs, rhs in
             if lhs.type.sortRank == rhs.type.sortRank {
@@ -711,6 +832,18 @@ private struct ContactFormSheet: View {
             }
             return lhs.type.sortRank < rhs.type.sortRank
         }
+    }
+
+    private var sortedDraftInteractions: [ContactInteraction] {
+        viewModel.form.interactions.sorted { $0.date > $1.date }
+    }
+
+    private var interactionListDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("d MMM yyyy, HH:mm")
+        return formatter
     }
 
     private func applyBirthdayFromForm(_ raw: String) {

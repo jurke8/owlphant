@@ -55,6 +55,7 @@
 "contacts.card.contact" = "Kontakt";
 "contacts.card.reminderCoffee" = "Podsjetnik za kavu";
 "contacts.card.reminderStayInTouch" = "Ostani u kontaktu svakih %d dana";
+"contacts.card.lastInteraction" = "Zadnja interakcija";
 
 "contacts.form.addTitle" = "Dodaj kontakt";
 "contacts.form.editTitle" = "Uredi kontakt";
@@ -89,6 +90,7 @@
 "contacts.form.section.work" = "Posao";
 "contacts.form.section.channels" = "Kanali";
 "contacts.form.section.personal" = "Osobno";
+"contacts.form.section.interactions" = "Povijest interakcija";
 "contacts.form.section.reminders" = "Podsjetnici";
 "contacts.form.relationship.contact" = "Kontakt";
 "contacts.form.relationship.selectContact" = "Odaberi kontakt";
@@ -99,6 +101,11 @@
 "contacts.form.reminder.coffeeDate" = "Datum i vrijeme kave";
 "contacts.form.reminder.stayInTouch" = "🤙 Ostani u kontaktu";
 "contacts.form.reminder.stayInTouchDays" = "Svakih %d dana";
+"contacts.form.interaction.date" = "Datum i vrijeme";
+"contacts.form.interaction.note" = "Što se dogodilo?";
+"contacts.form.interaction.add" = "Dodaj interakciju";
+"contacts.form.interaction.update" = "Ažuriraj interakciju";
+"contacts.form.interaction.empty" = "Još nema zabilježenih interakcija.";
 
 "relationship.friend" = "Prijatelj";
 "relationship.colleague" = "Kolega";
@@ -127,6 +134,8 @@
 "events.timeline.today" = "Danas";
 "events.timeline.tomorrow" = "Sutra";
 "events.timeline.later" = "Kasnije";
+"events.timeline.recent" = "Nedavno";
+"events.timeline.recentEmpty" = "Još nema nedavnih interakcija.";
 "events.timeline.empty" = "Nema događaja u ovom razdoblju.";
 "events.item.dateUnknown" = "Bez točnog datuma";
 "events.item.dateOnly" = "%@";

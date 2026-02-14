@@ -10,6 +10,7 @@ struct EventsView: View {
             ScreenBackground {
                 ScrollView {
                     VStack(spacing: 18) {
+                        timelineCard(title: L10n.tr("events.timeline.recent"), events: recentInteractionEvents, section: .recent)
                         timelineCard(title: todayTitle, events: todayEvents, section: .today)
                         timelineCard(title: tomorrowTitle, events: tomorrowEvents, section: .tomorrow)
                         timelineCard(title: L10n.tr("events.timeline.later"), events: laterEvents, section: .later)
@@ -77,6 +78,29 @@ struct EventsView: View {
             .sorted(by: Self.timelineSort)
     }
 
+    private var recentInteractionEvents: [TimelineEvent] {
+        viewModel.contacts
+            .flatMap { contact in
+                contact.interactions.map { interaction in
+                    TimelineEvent(
+                        id: "interaction.\(interaction.id.uuidString)",
+                        kind: .interaction,
+                        marker: "📝",
+                        title: contact.displayName,
+                        subtitle: interaction.note,
+                        date: Date(timeIntervalSince1970: interaction.date)
+                    )
+                }
+            }
+            .filter { event in
+                guard let date = event.date else { return false }
+                return date <= Date()
+            }
+            .sorted(by: Self.recentTimelineSort)
+            .prefix(10)
+            .map { $0 }
+    }
+
     private var todayEvents: [TimelineEvent] {
         timelineEvents.filter {
             guard let date = $0.date else { return false }
@@ -122,7 +146,7 @@ struct EventsView: View {
                 .foregroundStyle(AppTheme.text)
 
             if events.isEmpty {
-                Text(L10n.tr("events.timeline.empty"))
+                Text(section == .recent ? L10n.tr("events.timeline.recentEmpty") : L10n.tr("events.timeline.empty"))
                     .font(.system(.subheadline, design: .rounded))
                     .foregroundStyle(AppTheme.muted)
             } else if section == .later {
@@ -204,7 +228,7 @@ struct EventsView: View {
 
     private func dateLabel(for event: TimelineEvent, section: TimelineSection) -> String {
         guard let date = event.date else {
-            return section == .later ? "" : L10n.tr("events.item.dateUnknown")
+            return (section == .later || section == .recent) ? "" : L10n.tr("events.item.dateUnknown")
         }
 
         switch event.kind {
@@ -213,6 +237,10 @@ struct EventsView: View {
         case .meeting, .contactReminder:
             let time = Self.timeFormatter.string(from: date)
             return time
+        case .interaction:
+            let day = Self.dayMonthFormatter.string(from: date)
+            let time = Self.timeFormatter.string(from: date)
+            return "\(day) \(time)"
         }
     }
 
@@ -336,6 +364,28 @@ struct EventsView: View {
         return lhs.id < rhs.id
     }
 
+    nonisolated private static func recentTimelineSort(_ lhs: TimelineEvent, _ rhs: TimelineEvent) -> Bool {
+        switch (lhs.date, rhs.date) {
+        case let (.some(lhsDate), .some(rhsDate)):
+            if lhsDate != rhsDate {
+                return lhsDate > rhsDate
+            }
+        case (.some, .none):
+            return true
+        case (.none, .some):
+            return false
+        case (.none, .none):
+            break
+        }
+
+        let titleOrder = lhs.title.localizedCaseInsensitiveCompare(rhs.title)
+        if titleOrder != .orderedSame {
+            return titleOrder == .orderedAscending
+        }
+
+        return lhs.id < rhs.id
+    }
+
     private static let weekdayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("EEEE")
@@ -358,6 +408,7 @@ struct EventsView: View {
 }
 
 private enum TimelineSection {
+    case recent
     case today
     case tomorrow
     case later
@@ -375,6 +426,7 @@ private struct TimelineEvent: Identifiable {
         case birthday
         case meeting
         case contactReminder
+        case interaction
 
     }
 

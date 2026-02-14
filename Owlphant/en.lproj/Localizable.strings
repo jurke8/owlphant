@@ -55,6 +55,7 @@
 "contacts.card.contact" = "Contact";
 "contacts.card.reminderCoffee" = "Coffee reminder";
 "contacts.card.reminderStayInTouch" = "Stay in touch every %d days";
+"contacts.card.lastInteraction" = "Last interaction";
 
 "contacts.form.addTitle" = "Add a contact";
 "contacts.form.editTitle" = "Edit contact";
@@ -89,6 +90,7 @@
 "contacts.form.section.work" = "Work";
 "contacts.form.section.channels" = "Channels";
 "contacts.form.section.personal" = "Personal";
+"contacts.form.section.interactions" = "Interaction history";
 "contacts.form.section.reminders" = "Reminders";
 "contacts.form.relationship.contact" = "Contact";
 "contacts.form.relationship.selectContact" = "Select contact";
@@ -99,6 +101,11 @@
 "contacts.form.reminder.coffeeDate" = "Coffee date and time";
 "contacts.form.reminder.stayInTouch" = "🤙 Stay in touch";
 "contacts.form.reminder.stayInTouchDays" = "Every %d days";
+"contacts.form.interaction.date" = "Date and time";
+"contacts.form.interaction.note" = "What happened?";
+"contacts.form.interaction.add" = "Add interaction";
+"contacts.form.interaction.update" = "Update interaction";
+"contacts.form.interaction.empty" = "No interactions logged yet.";
 
 "relationship.friend" = "Friend";
 "relationship.colleague" = "Colleague";
@@ -127,6 +134,8 @@
 "events.timeline.today" = "Today";
 "events.timeline.tomorrow" = "Tomorrow";
 "events.timeline.later" = "Later";
+"events.timeline.recent" = "Recent";
+"events.timeline.recentEmpty" = "No recent interactions yet.";
 "events.timeline.empty" = "No events in this period.";
 "events.item.dateUnknown" = "No exact date";
 "events.item.dateOnly" = "%@";

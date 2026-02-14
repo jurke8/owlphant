@@ -94,6 +94,12 @@ struct ContactRelationship: Codable, Hashable, Identifiable {
     var id: String { "\(contactId.uuidString)-\(type.rawValue)" }
 }
 
+struct ContactInteraction: Codable, Hashable, Identifiable {
+    var id: UUID
+    var date: TimeInterval
+    var note: String
+}
+
 struct Contact: Codable, Identifiable, Hashable {
     var id: UUID
     var firstName: String
@@ -114,6 +120,7 @@ struct Contact: Codable, Identifiable, Hashable {
     var notes: String?
     var tags: [String]
     var relationships: [ContactRelationship]
+    var interactions: [ContactInteraction] = []
     var coffeeReminderAt: TimeInterval?
     var stayInTouchEveryDays: Int?
     var updatedAt: TimeInterval
@@ -168,6 +175,13 @@ extension Contact {
                 relationships: [
                     ContactRelationship(contactId: anjaId, type: .spouse)
                 ],
+                interactions: [
+                    ContactInteraction(
+                        id: UUID(uuidString: "3443AD55-95D4-42F9-A963-0CF089B8F03E")!,
+                        date: Date().addingTimeInterval(-60 * 60 * 24 * 4).timeIntervalSince1970,
+                        note: "Had coffee by the Drava and talked about spring travel plans."
+                    )
+                ],
                 coffeeReminderAt: nil,
                 stayInTouchEveryDays: nil,
                 updatedAt: Date().timeIntervalSince1970
@@ -189,6 +203,13 @@ extension Contact {
                 tags: ["family", "design", "art"],
                 relationships: [
                     ContactRelationship(contactId: ivanId, type: .spouse)
+                ],
+                interactions: [
+                    ContactInteraction(
+                        id: UUID(uuidString: "90E98D2E-9B6B-43E0-A23D-B6AF3A7DFE32")!,
+                        date: Date().addingTimeInterval(-60 * 60 * 24 * 2).timeIntervalSince1970,
+                        note: "Called about her Zagreb exhibition opening next month."
+                    )
                 ],
                 coffeeReminderAt: nil,
                 stayInTouchEveryDays: nil,

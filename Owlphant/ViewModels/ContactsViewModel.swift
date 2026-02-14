@@ -54,6 +54,10 @@ struct ContactFormState {
     var tags = ""
     var coffeeReminderAt: TimeInterval?
     var stayInTouchEveryDays: Int?
+    var interactions: [ContactInteraction] = []
+    var interactionDraftDate = Date()
+    var interactionDraftNote = ""
+    var editingInteractionId: UUID?
 
     var relationships: [ContactRelationship] = []
     var relationshipDraftTargetId: UUID?
@@ -111,6 +115,7 @@ final class ContactsViewModel: ObservableObject {
                     contact.workPosition ?? "",
                     channelText,
                     contact.notes ?? "",
+                    contact.interactions.map(\.note).joined(separator: " "),
                     contact.tags.joined(separator: " "),
                 ].joined(separator: " ").lowercased()
                 return haystack.contains(trimmed)
@@ -257,6 +262,10 @@ final class ContactsViewModel: ObservableObject {
         form.x = (contact.x ?? []).joined(separator: ", ")
         form.notes = contact.notes ?? ""
         form.tags = contact.tags.joined(separator: ", ")
+        form.interactions = contact.interactions.sorted { $0.date > $1.date }
+        form.interactionDraftDate = Date()
+        form.interactionDraftNote = ""
+        form.editingInteractionId = nil
         form.relationships = contact.relationships
         form.coffeeReminderAt = contact.coffeeReminderAt
         form.stayInTouchEveryDays = contact.stayInTouchEveryDays
@@ -331,6 +340,7 @@ final class ContactsViewModel: ObservableObject {
             notes: normalizedOptional(form.notes),
             tags: parseCSV(form.tags),
             relationships: form.relationships,
+            interactions: normalizedInteractions(form.interactions),
             coffeeReminderAt: normalizedFutureTimestamp(form.coffeeReminderAt),
             stayInTouchEveryDays: normalizedReminderInterval(form.stayInTouchEveryDays),
             updatedAt: now
@@ -404,6 +414,46 @@ final class ContactsViewModel: ObservableObject {
         form.relationshipDraftTargetId = relationship.contactId
         form.relationshipDraftType = relationship.type
         form.relationshipDraftIndex = idx
+    }
+
+    func addOrUpdateInteractionDraft() {
+        let note = form.interactionDraftNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !note.isEmpty else { return }
+
+        let timestamp = form.interactionDraftDate.timeIntervalSince1970
+
+        if let editingId = form.editingInteractionId,
+           let idx = form.interactions.firstIndex(where: { $0.id == editingId }) {
+            form.interactions[idx].note = note
+            form.interactions[idx].date = timestamp
+        } else {
+            form.interactions.append(
+                ContactInteraction(id: UUID(), date: timestamp, note: note)
+            )
+        }
+
+        form.interactions.sort { $0.date > $1.date }
+        resetInteractionDraft()
+    }
+
+    func editInteraction(_ interaction: ContactInteraction) {
+        form.editingInteractionId = interaction.id
+        form.interactionDraftDate = Date(timeIntervalSince1970: interaction.date)
+        form.interactionDraftNote = interaction.note
+    }
+
+    func removeInteraction(_ interaction: ContactInteraction) {
+        form.interactions.removeAll { $0.id == interaction.id }
+
+        if form.editingInteractionId == interaction.id {
+            resetInteractionDraft()
+        }
+    }
+
+    func resetInteractionDraft() {
+        form.interactionDraftDate = Date()
+        form.interactionDraftNote = ""
+        form.editingInteractionId = nil
     }
 
     func relationshipTargetName(_ id: UUID) -> String {
@@ -540,6 +590,10 @@ final class ContactsViewModel: ObservableObject {
         return nil
     }
 
+    var canSubmitInteractionDraft: Bool {
+        !form.interactionDraftNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private func parseCSV(_ value: String) -> [String] {
         value
             .split(separator: ",")
@@ -609,6 +663,19 @@ final class ContactsViewModel: ObservableObject {
     private func normalizedOptional(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func normalizedInteractions(_ interactions: [ContactInteraction]) -> [ContactInteraction] {
+        interactions
+            .map { interaction in
+                ContactInteraction(
+                    id: interaction.id,
+                    date: interaction.date,
+                    note: interaction.note.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+            }
+            .filter { !$0.note.isEmpty }
+            .sorted { $0.date > $1.date }
     }
 
     private func syncReminders() async {
@@ -699,6 +766,7 @@ final class ContactsViewModel: ObservableObject {
             notes: existing.notes,
             tags: existing.tags,
             relationships: existing.relationships,
+            interactions: existing.interactions,
             coffeeReminderAt: existing.coffeeReminderAt,
             stayInTouchEveryDays: existing.stayInTouchEveryDays,
             updatedAt: now
@@ -726,6 +794,7 @@ final class ContactsViewModel: ObservableObject {
             notes: nil,
             tags: [],
             relationships: [],
+            interactions: [],
             coffeeReminderAt: nil,
             stayInTouchEveryDays: nil,
             updatedAt: now
