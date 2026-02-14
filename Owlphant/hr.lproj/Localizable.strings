@@ -171,8 +171,8 @@
 "settings.notifications.disabled" = "Obavijesti su isključene. Uključi ih u postavkama sustava.";
 "settings.notifications.notEnabled" = "Obavijesti još nisu uključene.";
 "settings.notifications.unavailable" = "Status obavijesti nije dostupan.";
-"settings.import.title" = "Uvoz kontakata";
-"settings.import.subtitle" = "Uvezi iz adresara i spoji prema podudaranju e-pošte ili telefona.";
+"settings.import.title" = "Uvoz kontakata i sastanaka";
+"settings.import.subtitle" = "Uvezi kontakte iz adresara i sastanke iz kalendara.";
 "settings.import.meetings.button" = "Uvezi sastanke iz kalendara";
 
 "settings.backup.title" = "Šifrirani backup";

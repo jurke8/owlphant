@@ -171,8 +171,8 @@
 "settings.notifications.disabled" = "Notifications are disabled. Enable them in system settings.";
 "settings.notifications.notEnabled" = "Notifications are not enabled yet.";
 "settings.notifications.unavailable" = "Notification status unavailable.";
-"settings.import.title" = "Import contacts";
-"settings.import.subtitle" = "Import from your address book and merge by matching email or phone.";
+"settings.import.title" = "Import contacts and meetings";
+"settings.import.subtitle" = "Import contacts from your address book and meetings from your calendar.";
 "settings.import.meetings.button" = "Import meetings from calendar";
 
 "settings.backup.title" = "Encrypted backup";
