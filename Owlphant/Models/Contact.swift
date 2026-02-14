@@ -145,46 +145,55 @@ struct Contact: Codable, Identifiable, Hashable {
 }
 
 extension Contact {
-    static let sampleSeed: [Contact] = [
-        Contact(
-            id: UUID(),
-            firstName: "Mina",
-            lastName: "Park",
-            nickname: "Mina P",
-            birthday: "1992-07-14",
-            photoDataBase64: nil,
-            placeOfBirth: "Seoul, South Korea",
-            placeOfLiving: "1100 NW Glisan St, Portland, OR, United States",
-            company: "Clayline Studio",
-            workPosition: "Creative Director",
-            phones: ["+1 555 201 4488"],
-            emails: ["mina@example.com"],
-            notes: "Loves ceramics, runs a community garden. Ask about her new studio.",
-            tags: ["friend", "creative", "garden"],
-            relationships: [],
-            coffeeReminderAt: nil,
-            stayInTouchEveryDays: nil,
-            updatedAt: Date().timeIntervalSince1970
-        ),
-        Contact(
-            id: UUID(),
-            firstName: "Theo",
-            lastName: "Diaz",
-            nickname: "T",
-            birthday: "1988-11-03",
-            photoDataBase64: nil,
-            placeOfBirth: "Bogota, Colombia",
-            placeOfLiving: "401 Congress Ave, Austin, TX, United States",
-            company: "Lumen Labs",
-            workPosition: "Product Manager",
-            phones: ["+1 555 908 1121"],
-            emails: ["theo@example.com"],
-            notes: "Brother. Anniversary on June 9. Favorite coffee: flat white.",
-            tags: ["family", "anniversary"],
-            relationships: [],
-            coffeeReminderAt: nil,
-            stayInTouchEveryDays: nil,
-            updatedAt: Date().timeIntervalSince1970 - 1
-        ),
-    ]
+    static let sampleSeed: [Contact] = {
+        let ivanId = UUID(uuidString: "1F7194D1-387D-4698-9B9C-B7E0C8F46BA9")!
+        let anjaId = UUID(uuidString: "D98A105B-ECD0-4F6A-BA53-D2AD1D6B8465")!
+
+        return [
+            Contact(
+                id: ivanId,
+                firstName: "Ivan",
+                lastName: "Juric",
+                nickname: "Jurke",
+                birthday: "1989-04-22",
+                photoDataBase64: nil,
+                placeOfBirth: "Osijek, Croatia",
+                placeOfLiving: "Osijek, Croatia",
+                company: "Slavonia Tech",
+                workPosition: "Software Engineer",
+                phones: ["+385 91 234 5678"],
+                emails: ["ivan.juric@example.com"],
+                notes: "Husband of Anja. Loves weekend cycling by the Drava and follows NK Osijek.",
+                tags: ["family", "tech", "cycling"],
+                relationships: [
+                    ContactRelationship(contactId: anjaId, type: .spouse)
+                ],
+                coffeeReminderAt: nil,
+                stayInTouchEveryDays: nil,
+                updatedAt: Date().timeIntervalSince1970
+            ),
+            Contact(
+                id: anjaId,
+                firstName: "Anja",
+                lastName: "Juric",
+                nickname: "Njanja",
+                birthday: "1991-09-10",
+                photoDataBase64: nil,
+                placeOfBirth: "Zagreb, Croatia",
+                placeOfLiving: "Zagreb, Croatia",
+                company: "Zagreb Design Studio",
+                workPosition: "Interior Designer",
+                phones: ["+385 98 345 6789"],
+                emails: ["anja.juric@example.com"],
+                notes: "Wife of Ivan. Enjoys modern art exhibitions and short city-break trips.",
+                tags: ["family", "design", "art"],
+                relationships: [
+                    ContactRelationship(contactId: ivanId, type: .spouse)
+                ],
+                coffeeReminderAt: nil,
+                stayInTouchEveryDays: nil,
+                updatedAt: Date().timeIntervalSince1970 - 1
+            ),
+        ]
+    }()
 }

@@ -368,9 +368,7 @@ private struct MapContactDetailsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                         .padding(.top, (!contact.phones.isEmpty || !contact.emails.isEmpty) ? 6 : 0)
                                     ForEach(facebook, id: \.self) { handle in
-                                        Text(handle)
-                                            .font(.system(.body, design: .rounded))
-                                            .foregroundStyle(AppTheme.text)
+                                        socialLinkView(handle, platform: .facebook)
                                     }
                                 }
 
@@ -381,9 +379,7 @@ private struct MapContactDetailsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                         .padding(.top, 6)
                                     ForEach(linkedin, id: \.self) { handle in
-                                        Text(handle)
-                                            .font(.system(.body, design: .rounded))
-                                            .foregroundStyle(AppTheme.text)
+                                        socialLinkView(handle, platform: .linkedin)
                                     }
                                 }
 
@@ -394,9 +390,7 @@ private struct MapContactDetailsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                         .padding(.top, 6)
                                     ForEach(instagram, id: \.self) { handle in
-                                        Text(handle)
-                                            .font(.system(.body, design: .rounded))
-                                            .foregroundStyle(AppTheme.text)
+                                        socialLinkView(handle, platform: .instagram)
                                     }
                                 }
 
@@ -407,9 +401,7 @@ private struct MapContactDetailsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                         .padding(.top, 6)
                                     ForEach(xHandles, id: \.self) { handle in
-                                        Text(handle)
-                                            .font(.system(.body, design: .rounded))
-                                            .foregroundStyle(AppTheme.text)
+                                        socialLinkView(handle, platform: .x)
                                     }
                                 }
                             }
@@ -454,6 +446,22 @@ private struct MapContactDetailsView: View {
                         .font(.system(.headline, design: .rounded).weight(.bold))
                         .foregroundStyle(AppTheme.text)
                 }
+        }
+    }
+
+    @ViewBuilder
+    private func socialLinkView(_ rawValue: String, platform: SocialPlatform) -> some View {
+        if let normalized = SocialLinkValidator.normalize(rawValue, platform: platform),
+           let destination = URL(string: normalized) {
+            Link(rawValue, destination: destination)
+                .font(.system(.body, design: .rounded))
+                .foregroundStyle(AppTheme.tint)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        } else {
+            Text(rawValue)
+                .font(.system(.body, design: .rounded))
+                .foregroundStyle(AppTheme.text)
         }
     }
 }

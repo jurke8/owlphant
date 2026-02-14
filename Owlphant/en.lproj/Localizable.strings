@@ -211,6 +211,8 @@
 "error.contact.delete" = "Could not delete contact.";
 "error.contact.import.permission" = "Contacts access is needed to import from your address book.";
 "error.contact.import.save" = "Could not import contacts from your address book.";
+"error.contact.email.invalid" = "Please enter valid email addresses.";
+"error.contact.social.invalid" = "Please enter valid social media links.";
 "error.backup.passphrase.empty" = "Enter a backup password.";
 "error.backup.passphrase.mismatch" = "Backup passwords do not match.";
 "error.backup.export" = "Could not export encrypted backup.";

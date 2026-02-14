@@ -79,6 +79,11 @@ final class ContactsViewModel: ObservableObject {
     private let reminderService = BirthdayReminderService.shared
     private let eventStore = EKEventStore()
 
+    private enum SocialValidationError: Error {
+        case invalidURL
+        case invalidEmail
+    }
+
     var filteredContacts: [Contact] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let filtered: [Contact]
@@ -276,6 +281,32 @@ final class ContactsViewModel: ObservableObject {
             return
         }
 
+        let facebookLinks: [String]?
+        let linkedinLinks: [String]?
+        let instagramLinks: [String]?
+        let xLinks: [String]?
+        let emails: [String]
+
+        do {
+            emails = try validatedEmails(from: form.emails)
+            facebookLinks = try validatedSocialLinks(from: form.facebook, platform: .facebook)
+            linkedinLinks = try validatedSocialLinks(from: form.linkedin, platform: .linkedin)
+            instagramLinks = try validatedSocialLinks(from: form.instagram, platform: .instagram)
+            xLinks = try validatedSocialLinks(from: form.x, platform: .x)
+        } catch {
+            if let error = error as? SocialValidationError {
+                switch error {
+                case .invalidURL:
+                    errorMessage = L10n.tr("error.contact.social.invalid")
+                case .invalidEmail:
+                    errorMessage = L10n.tr("error.contact.email.invalid")
+                }
+            } else {
+                errorMessage = L10n.tr("error.contact.save")
+            }
+            return
+        }
+
         let now = Date().timeIntervalSince1970
         let id = selectedContactId ?? UUID()
         var updatedContacts = contacts
@@ -292,11 +323,11 @@ final class ContactsViewModel: ObservableObject {
             company: normalizedOptional(form.company),
             workPosition: normalizedOptional(form.workPosition),
             phones: parseCSV(form.phones),
-            emails: parseCSV(form.emails),
-            facebook: parseOptionalCSV(form.facebook),
-            linkedin: parseOptionalCSV(form.linkedin),
-            instagram: parseOptionalCSV(form.instagram),
-            x: parseOptionalCSV(form.x),
+            emails: emails,
+            facebook: facebookLinks,
+            linkedin: linkedinLinks,
+            instagram: instagramLinks,
+            x: xLinks,
             notes: normalizedOptional(form.notes),
             tags: parseCSV(form.tags),
             relationships: form.relationships,
@@ -492,6 +523,23 @@ final class ContactsViewModel: ObservableObject {
         contacts.filter { $0.id != selectedContactId }.sorted { $0.displayName < $1.displayName }
     }
 
+    var canSubmitForm: Bool {
+        formValidationMessage == nil
+    }
+
+    var formValidationMessage: String? {
+        if isNameMissing {
+            return L10n.tr("error.contact.missingName")
+        }
+        if !hasValidEmails {
+            return L10n.tr("error.contact.email.invalid")
+        }
+        if !hasValidSocialLinks {
+            return L10n.tr("error.contact.social.invalid")
+        }
+        return nil
+    }
+
     private func parseCSV(_ value: String) -> [String] {
         value
             .split(separator: ",")
@@ -502,6 +550,60 @@ final class ContactsViewModel: ObservableObject {
     private func parseOptionalCSV(_ value: String) -> [String]? {
         let parsed = parseCSV(value)
         return parsed.isEmpty ? nil : parsed
+    }
+
+    private var isNameMissing: Bool {
+        let first = form.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let last = form.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nickname = form.nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        return first.isEmpty && last.isEmpty && nickname.isEmpty
+    }
+
+    private var hasValidEmails: Bool {
+        let entries = parseCSV(form.emails)
+        return entries.allSatisfy(isValidEmail)
+    }
+
+    private var hasValidSocialLinks: Bool {
+        socialLinksAreValid(in: form.facebook, platform: .facebook)
+            && socialLinksAreValid(in: form.linkedin, platform: .linkedin)
+            && socialLinksAreValid(in: form.instagram, platform: .instagram)
+            && socialLinksAreValid(in: form.x, platform: .x)
+    }
+
+    private func socialLinksAreValid(in value: String, platform: SocialPlatform) -> Bool {
+        let entries = parseCSV(value)
+        return entries.allSatisfy { SocialLinkValidator.normalize($0, platform: platform) != nil }
+    }
+
+    private func isValidEmail(_ value: String) -> Bool {
+        let pattern = "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$"
+        return value.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    private func validatedEmails(from value: String) throws -> [String] {
+        let parsed = parseCSV(value)
+        guard parsed.allSatisfy(isValidEmail) else {
+            throw SocialValidationError.invalidEmail
+        }
+        return parsed
+    }
+
+    private func validatedSocialLinks(from value: String, platform: SocialPlatform) throws -> [String]? {
+        let parsed = parseCSV(value)
+        guard !parsed.isEmpty else { return nil }
+
+        var normalized: [String] = []
+        normalized.reserveCapacity(parsed.count)
+
+        for entry in parsed {
+            guard let urlString = SocialLinkValidator.normalize(entry, platform: platform) else {
+                throw SocialValidationError.invalidURL
+            }
+            normalized.append(urlString)
+        }
+
+        return normalized
     }
 
     private func normalizedOptional(_ value: String) -> String? {

@@ -96,7 +96,7 @@ struct ContactsView: View {
             Text(L10n.tr("contacts.alert.delete.message"))
         }
         .alert(L10n.tr("common.notice"), isPresented: Binding(
-            get: { viewModel.errorMessage != nil },
+            get: { !viewModel.isPresentingForm && viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
         )) {
             Button(L10n.tr("common.ok"), role: .cancel) {
@@ -341,6 +341,7 @@ private struct ContactFormSheet: View {
     @State private var relationshipsExpanded = false
     @State private var remindersExpanded = false
     @State private var isCoffeeDatePickerPresented = false
+    @State private var hasInteractedWithForm = false
 
     var body: some View {
         NavigationStack {
@@ -459,6 +460,14 @@ private struct ContactFormSheet: View {
                             Task { await viewModel.save() }
                         }
                         .buttonStyle(PrimaryButtonStyle())
+                        .disabled(!viewModel.canSubmitForm)
+
+                        if hasInteractedWithForm, let validationMessage = viewModel.formValidationMessage {
+                            Text(validationMessage)
+                                .font(.system(.footnote, design: .rounded))
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .padding(20)
                     .padding(.bottom, 30)
@@ -467,6 +476,7 @@ private struct ContactFormSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
+            hasInteractedWithForm = false
             applyBirthdayFromForm(viewModel.form.birthday)
         }
         .onChange(of: viewModel.form.birthday) { _, newValue in
@@ -748,7 +758,10 @@ private struct ContactFormSheet: View {
     private func binding<T>(_ keyPath: WritableKeyPath<ContactFormState, T>) -> Binding<T> {
         Binding(
             get: { viewModel.form[keyPath: keyPath] },
-            set: { viewModel.form[keyPath: keyPath] = $0 }
+            set: {
+                hasInteractedWithForm = true
+                viewModel.form[keyPath: keyPath] = $0
+            }
         )
     }
 

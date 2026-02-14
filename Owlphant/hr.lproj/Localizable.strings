@@ -211,6 +211,8 @@
 "error.contact.delete" = "Nije moguće izbrisati kontakt.";
 "error.contact.import.permission" = "Za uvoz iz adresara potreban je pristup kontaktima.";
 "error.contact.import.save" = "Nije moguće uvesti kontakte iz adresara.";
+"error.contact.email.invalid" = "Unesi valjane adrese e-pošte.";
+"error.contact.social.invalid" = "Unesi valjane poveznice za društvene mreže.";
 "error.backup.passphrase.empty" = "Unesi lozinku backupa.";
 "error.backup.passphrase.mismatch" = "Lozinke backupa se ne podudaraju.";
 "error.backup.export" = "Nije moguće izvesti šifrirani backup.";
