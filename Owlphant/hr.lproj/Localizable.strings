@@ -175,6 +175,21 @@
 "settings.import.subtitle" = "Uvezi iz adresara i spoji prema podudaranju e-pošte ili telefona.";
 "settings.import.meetings.button" = "Uvezi sastanke iz kalendara";
 
+"settings.backup.title" = "Šifrirani backup";
+"settings.backup.subtitle" = "Izvezi i uvezi kontakte kao jednu šifriranu backup datoteku.";
+"settings.backup.export.button" = "Izvezi šifrirani backup";
+"settings.backup.import.button" = "Uvezi šifrirani backup";
+"settings.backup.export.passphrase.title" = "Postavi lozinku backupa";
+"settings.backup.export.passphrase.subtitle" = "Ovu lozinku koristiš pri vraćanju backupa na ovom ili drugom uređaju.";
+"settings.backup.export.passphrase.action" = "Izvezi backup";
+"settings.backup.import.passphrase.title" = "Vrati šifrirani backup";
+"settings.backup.import.passphrase.subtitle" = "Unesi lozinku backupa. Ovo zamjenjuje sve postojeće kontakte na ovom uređaju.";
+"settings.backup.import.passphrase.action" = "Uvezi i zamijeni";
+"settings.backup.passphrase" = "Lozinka backupa";
+"settings.backup.passphrase.confirm" = "Potvrdi lozinku backupa";
+"settings.backup.export.success" = "Šifrirani backup je izvezen.";
+"settings.backup.import.success" = "Šifrirani backup je uvezen. Vraćeno kontakata: %d.";
+
 "settings.addReminder.title" = "Dodaj podsjetnik";
 "settings.addReminder.when" = "Kada";
 "settings.addReminder.onBirthday" = "Na rođendan";
@@ -196,6 +211,12 @@
 "error.contact.delete" = "Nije moguće izbrisati kontakt.";
 "error.contact.import.permission" = "Za uvoz iz adresara potreban je pristup kontaktima.";
 "error.contact.import.save" = "Nije moguće uvesti kontakte iz adresara.";
+"error.backup.passphrase.empty" = "Unesi lozinku backupa.";
+"error.backup.passphrase.mismatch" = "Lozinke backupa se ne podudaraju.";
+"error.backup.export" = "Nije moguće izvesti šifrirani backup.";
+"error.backup.import.invalidFile" = "Odabrana datoteka nije valjan šifrirani backup.";
+"error.backup.import.decrypt" = "Nije moguće dešifrirati backup. Provjeri lozinku.";
+"error.backup.import.save" = "Nije moguće vratiti kontakte iz backupa.";
 "error.calendar.import.permission" = "Za uvoz sastanaka potreban je pristup kalendaru.";
 "error.calendar.import.load" = "Nije moguće uvesti sastanke iz kalendara.";
 "error.map.resolve" = "Trenutno nije moguće mapirati spremljena mjesta stanovanja. Pokušaj ponovno uskoro.";

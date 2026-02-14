@@ -75,6 +75,7 @@ final class ContactsViewModel: ObservableObject {
     @Published var upcomingMeetings: [UpcomingMeeting] = []
 
     private let store = EncryptedContactsStore()
+    private let backupService = EncryptedBackupService()
     private let reminderService = BirthdayReminderService.shared
     private let eventStore = EKEventStore()
 
@@ -449,6 +450,36 @@ final class ContactsViewModel: ObservableObject {
             upcomingMeetings = loadUpcomingMeetings()
         } catch {
             errorMessage = L10n.tr("error.calendar.import.load")
+        }
+    }
+
+    func exportEncryptedBackup(passphrase: String) throws -> Data {
+        let trimmedPassphrase = passphrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPassphrase.isEmpty else {
+            throw EncryptedBackupServiceError.invalidFormat
+        }
+        return try backupService.exportBackupData(contacts: contacts, passphrase: trimmedPassphrase)
+    }
+
+    func importEncryptedBackup(data: Data, passphrase: String) async {
+        let trimmedPassphrase = passphrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPassphrase.isEmpty else {
+            errorMessage = L10n.tr("error.backup.passphrase.empty")
+            return
+        }
+
+        do {
+            let importedContacts = try backupService.importContacts(from: data, passphrase: trimmedPassphrase)
+            try await store.saveContacts(importedContacts)
+            contacts = importedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncReminders()
+            refreshUpcomingMeetingsIfAuthorized()
+        } catch EncryptedBackupServiceError.invalidFormat {
+            errorMessage = L10n.tr("error.backup.import.invalidFile")
+        } catch EncryptedBackupServiceError.decryptionFailed {
+            errorMessage = L10n.tr("error.backup.import.decrypt")
+        } catch {
+            errorMessage = L10n.tr("error.backup.import.save")
         }
     }
 

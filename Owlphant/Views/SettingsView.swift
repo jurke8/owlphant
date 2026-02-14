@@ -2,6 +2,7 @@ import Contacts
 import ContactsUI
 import LocalAuthentication
 import SwiftUI
+import UniformTypeIdentifiers
 import UserNotifications
 
 struct SettingsView: View {
@@ -13,6 +14,16 @@ struct SettingsView: View {
     @State private var reminderRules: [BirthdayReminderRule] = []
     @State private var isPresentingAddReminder = false
     @State private var isPresentingAddressBookPicker = false
+    @State private var isPresentingBackupExporter = false
+    @State private var isPresentingBackupImporter = false
+    @State private var isPresentingExportPassphraseSheet = false
+    @State private var isPresentingImportPassphraseSheet = false
+    @State private var exportPassphrase = ""
+    @State private var exportPassphraseConfirmation = ""
+    @State private var importPassphrase = ""
+    @State private var pendingBackupDocument: BackupFileDocument?
+    @State private var selectedBackupURL: URL?
+    @State private var backupStatusMessage: String?
     @State private var appLockAuthFailed = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -166,6 +177,30 @@ struct SettingsView: View {
                         }
 
                         SectionCard {
+                            Text(L10n.tr("settings.backup.title"))
+                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+
+                            Text(L10n.tr("settings.backup.subtitle"))
+                                .font(.system(.subheadline, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+
+                            Button(L10n.tr("settings.backup.export.button")) {
+                                exportPassphrase = ""
+                                exportPassphraseConfirmation = ""
+                                isPresentingExportPassphraseSheet = true
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+
+                            Divider()
+
+                            Button(L10n.tr("settings.backup.import.button")) {
+                                isPresentingBackupImporter = true
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                        }
+
+                        SectionCard {
                             Text(L10n.tr("settings.encryption.note"))
                                 .font(.system(.body, design: .rounded))
                                 .foregroundStyle(AppTheme.muted)
@@ -207,6 +242,59 @@ struct SettingsView: View {
                 }
             )
         }
+        .sheet(isPresented: $isPresentingExportPassphraseSheet) {
+            backupPassphraseSheet(
+                title: L10n.tr("settings.backup.export.passphrase.title"),
+                subtitle: L10n.tr("settings.backup.export.passphrase.subtitle"),
+                passphrase: $exportPassphrase,
+                confirmPassphrase: $exportPassphraseConfirmation,
+                actionLabel: L10n.tr("settings.backup.export.passphrase.action"),
+                actionRole: nil,
+                onConfirm: startBackupExport
+            )
+        }
+        .sheet(isPresented: $isPresentingImportPassphraseSheet) {
+            backupPassphraseSheet(
+                title: L10n.tr("settings.backup.import.passphrase.title"),
+                subtitle: L10n.tr("settings.backup.import.passphrase.subtitle"),
+                passphrase: $importPassphrase,
+                confirmPassphrase: .constant(""),
+                actionLabel: L10n.tr("settings.backup.import.passphrase.action"),
+                actionRole: .destructive,
+                onConfirm: startBackupImport
+            )
+        }
+        .fileExporter(
+            isPresented: $isPresentingBackupExporter,
+            document: pendingBackupDocument,
+            contentType: .owlphantBackup,
+            defaultFilename: backupFilename
+        ) { result in
+            switch result {
+            case .success:
+                backupStatusMessage = L10n.tr("settings.backup.export.success")
+            case .failure:
+                viewModel.errorMessage = L10n.tr("error.backup.export")
+            }
+        }
+        .fileImporter(
+            isPresented: $isPresentingBackupImporter,
+            allowedContentTypes: [.owlphantBackup, .data],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case let .success(urls):
+                guard let url = urls.first else {
+                    viewModel.errorMessage = L10n.tr("error.backup.import.invalidFile")
+                    return
+                }
+                selectedBackupURL = url
+                importPassphrase = ""
+                isPresentingImportPassphraseSheet = true
+            case .failure:
+                viewModel.errorMessage = L10n.tr("error.backup.import.invalidFile")
+            }
+        }
         .alert(L10n.tr("common.notice"), isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -217,10 +305,142 @@ struct SettingsView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        .alert(L10n.tr("common.notice"), isPresented: Binding(
+            get: { backupStatusMessage != nil },
+            set: { if !$0 { backupStatusMessage = nil } }
+        )) {
+            Button(L10n.tr("common.ok"), role: .cancel) {
+                backupStatusMessage = nil
+            }
+        } message: {
+            Text(backupStatusMessage ?? "")
+        }
         .alert(L10n.tr("common.notice"), isPresented: $appLockAuthFailed) {
             Button(L10n.tr("common.ok"), role: .cancel) {}
         } message: {
             Text(L10n.tr("settings.security.authFailed"))
+        }
+    }
+
+    private var backupFilename: String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd-HHmm"
+        return "owlphant-backup-\(formatter.string(from: Date())).owlbackup"
+    }
+
+    private func startBackupExport() {
+        let trimmedPassphrase = exportPassphrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedConfirmation = exportPassphraseConfirmation.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedPassphrase.isEmpty else {
+            viewModel.errorMessage = L10n.tr("error.backup.passphrase.empty")
+            return
+        }
+
+        guard trimmedPassphrase == trimmedConfirmation else {
+            viewModel.errorMessage = L10n.tr("error.backup.passphrase.mismatch")
+            return
+        }
+
+        do {
+            let backupData = try viewModel.exportEncryptedBackup(passphrase: trimmedPassphrase)
+            pendingBackupDocument = BackupFileDocument(data: backupData)
+            isPresentingExportPassphraseSheet = false
+            isPresentingBackupExporter = true
+        } catch {
+            viewModel.errorMessage = L10n.tr("error.backup.export")
+        }
+    }
+
+    private func startBackupImport() {
+        guard let backupURL = selectedBackupURL else {
+            viewModel.errorMessage = L10n.tr("error.backup.import.invalidFile")
+            return
+        }
+
+        let trimmedPassphrase = importPassphrase.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPassphrase.isEmpty else {
+            viewModel.errorMessage = L10n.tr("error.backup.passphrase.empty")
+            return
+        }
+
+        isPresentingImportPassphraseSheet = false
+
+        Task {
+            do {
+                let backupData = try readBackupData(from: backupURL)
+                await viewModel.importEncryptedBackup(data: backupData, passphrase: trimmedPassphrase)
+                if viewModel.errorMessage == nil {
+                    backupStatusMessage = L10n.format("settings.backup.import.success", viewModel.contacts.count)
+                }
+            } catch {
+                viewModel.errorMessage = L10n.tr("error.backup.import.invalidFile")
+            }
+            selectedBackupURL = nil
+        }
+    }
+
+    private func readBackupData(from url: URL) throws -> Data {
+        let hasSecurityAccess = url.startAccessingSecurityScopedResource()
+        defer {
+            if hasSecurityAccess {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+        return try Data(contentsOf: url)
+    }
+
+    private func backupPassphraseSheet(
+        title: String,
+        subtitle: String,
+        passphrase: Binding<String>,
+        confirmPassphrase: Binding<String>,
+        actionLabel: String,
+        actionRole: ButtonRole?,
+        onConfirm: @escaping () -> Void
+    ) -> some View {
+        NavigationStack {
+            ScreenBackground {
+                VStack(spacing: 14) {
+                    SectionCard {
+                        Text(title)
+                            .font(.system(.headline, design: .rounded).weight(.semibold))
+                            .foregroundStyle(AppTheme.text)
+
+                        Text(subtitle)
+                            .font(.system(.subheadline, design: .rounded))
+                            .foregroundStyle(AppTheme.muted)
+
+                        SecureField(L10n.tr("settings.backup.passphrase"), text: passphrase)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled(true)
+                            .appInputChrome()
+
+                        if !confirmPassphrase.wrappedValue.isEmpty || actionRole == nil {
+                            SecureField(L10n.tr("settings.backup.passphrase.confirm"), text: confirmPassphrase)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled(true)
+                                .appInputChrome()
+                        }
+
+                        Button(actionLabel, role: actionRole) {
+                            onConfirm()
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    }
+
+                    Button(L10n.tr("common.cancel")) {
+                        isPresentingExportPassphraseSheet = false
+                        isPresentingImportPassphraseSheet = false
+                    }
+                    .font(.system(.subheadline, design: .rounded).weight(.medium))
+                    .foregroundStyle(AppTheme.muted)
+                }
+                .padding(20)
+            }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -564,4 +784,29 @@ private struct AddBirthdayReminderSheet: View {
 
     private static let calendar = Calendar.current
     private static let defaultTime = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: Date()) ?? Date()
+}
+
+private struct BackupFileDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.owlphantBackup, .data] }
+
+    let data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        self.data = data
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
+    }
+}
+
+private extension UTType {
+    static let owlphantBackup = UTType(exportedAs: "com.owlphant.backup")
 }

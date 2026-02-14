@@ -175,6 +175,21 @@
 "settings.import.subtitle" = "Import from your address book and merge by matching email or phone.";
 "settings.import.meetings.button" = "Import meetings from calendar";
 
+"settings.backup.title" = "Encrypted backup";
+"settings.backup.subtitle" = "Export and import your contacts as one encrypted backup file.";
+"settings.backup.export.button" = "Export encrypted backup";
+"settings.backup.import.button" = "Import encrypted backup";
+"settings.backup.export.passphrase.title" = "Create backup password";
+"settings.backup.export.passphrase.subtitle" = "Use this password when restoring the backup on this or another device.";
+"settings.backup.export.passphrase.action" = "Export backup";
+"settings.backup.import.passphrase.title" = "Restore encrypted backup";
+"settings.backup.import.passphrase.subtitle" = "Enter the backup password. This replaces all existing contacts on this device.";
+"settings.backup.import.passphrase.action" = "Import and replace";
+"settings.backup.passphrase" = "Backup password";
+"settings.backup.passphrase.confirm" = "Confirm backup password";
+"settings.backup.export.success" = "Encrypted backup exported.";
+"settings.backup.import.success" = "Encrypted backup imported. %d contacts restored.";
+
 "settings.addReminder.title" = "Add reminder";
 "settings.addReminder.when" = "When";
 "settings.addReminder.onBirthday" = "On birthday";
@@ -196,6 +211,12 @@
 "error.contact.delete" = "Could not delete contact.";
 "error.contact.import.permission" = "Contacts access is needed to import from your address book.";
 "error.contact.import.save" = "Could not import contacts from your address book.";
+"error.backup.passphrase.empty" = "Enter a backup password.";
+"error.backup.passphrase.mismatch" = "Backup passwords do not match.";
+"error.backup.export" = "Could not export encrypted backup.";
+"error.backup.import.invalidFile" = "Selected file is not a valid encrypted backup.";
+"error.backup.import.decrypt" = "Could not decrypt backup. Check your password.";
+"error.backup.import.save" = "Could not restore contacts from backup.";
 "error.calendar.import.permission" = "Calendar access is needed to import meetings.";
 "error.calendar.import.load" = "Could not import meetings from your calendar.";
 "error.map.resolve" = "Could not map saved living places yet. Try again in a moment.";
