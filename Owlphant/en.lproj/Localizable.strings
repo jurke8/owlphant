@@ -39,6 +39,8 @@
 "contacts.sort.direction.title" = "Order";
 "contacts.sort.direction.ascending" = "Ascending";
 "contacts.sort.direction.descending" = "Descending";
+"contacts.sort.direction.short.ascending" = "Asc";
+"contacts.sort.direction.short.descending" = "Desc";
 "contacts.unnamed" = "Unnamed Contact";
 "contacts.unknown" = "Unknown contact";
 "contacts.import.button" = "Import from address book";

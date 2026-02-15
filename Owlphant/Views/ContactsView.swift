@@ -164,38 +164,123 @@ struct ContactsView: View {
                 }
             }
 
-            HStack {
-                Text(viewModel.sortField.localizedTitle)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(AppTheme.text)
-                Spacer()
-                Text(savedContactsText)
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(AppTheme.muted)
-            }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Text(L10n.tr("contacts.sort.field.title"))
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(AppTheme.muted)
 
-            HStack(spacing: 8) {
-                Picker(L10n.tr("contacts.sort.field.title"), selection: $viewModel.sortField) {
-                    ForEach(ContactSortField.allCases, id: \.self) { field in
-                        Text(field.localizedTitle).tag(field)
-                    }
-                }
-                .pickerStyle(.menu)
-                .appInputChrome()
+                    Spacer()
 
-                Picker(L10n.tr("contacts.sort.direction.title"), selection: $viewModel.sortDirection) {
-                    ForEach(ContactSortDirection.allCases, id: \.self) { direction in
-                        Text(direction.localizedTitle).tag(direction)
-                    }
+                    Text(savedContactsText)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(AppTheme.muted)
                 }
-                .pickerStyle(.menu)
-                .appInputChrome()
+
+                HStack(spacing: 8) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(ContactSortField.allCases, id: \.self) { field in
+                                FilterChip(
+                                    label: field.localizedTitle,
+                                    isSelected: viewModel.sortField == field,
+                                    action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.sortField = field
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            toggleSortDirection()
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: sortDirectionIcon)
+                                .font(.system(size: 11, weight: .bold))
+                            Text(sortDirectionShortTitle)
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                        }
+                        .foregroundStyle(sortDirectionForeground)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(sortDirectionBackground)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule().stroke(sortDirectionBorder, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.tr("contacts.sort.direction.title"))
+                    .accessibilityValue(viewModel.sortDirection.localizedTitle)
+                }
             }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.sortField)
+            .animation(.easeInOut(duration: 0.2), value: viewModel.sortDirection)
         }
     }
 
     private var savedContactsText: String {
         L10n.format("contacts.header.savedCount", viewModel.filteredContacts.count)
+    }
+
+    private var sortDirectionIcon: String {
+        switch viewModel.sortDirection {
+        case .ascending:
+            return "arrow.up"
+        case .descending:
+            return "arrow.down"
+        }
+    }
+
+    private var sortDirectionShortTitle: String {
+        switch viewModel.sortDirection {
+        case .ascending:
+            return L10n.tr("contacts.sort.direction.short.ascending")
+        case .descending:
+            return L10n.tr("contacts.sort.direction.short.descending")
+        }
+    }
+
+    private var sortDirectionForeground: Color {
+        switch viewModel.sortDirection {
+        case .ascending:
+            return AppTheme.tint
+        case .descending:
+            return AppTheme.accent
+        }
+    }
+
+    private var sortDirectionBackground: Color {
+        switch viewModel.sortDirection {
+        case .ascending:
+            return AppTheme.tint.opacity(0.18)
+        case .descending:
+            return AppTheme.accent.opacity(0.2)
+        }
+    }
+
+    private var sortDirectionBorder: Color {
+        switch viewModel.sortDirection {
+        case .ascending:
+            return AppTheme.tint.opacity(0.55)
+        case .descending:
+            return AppTheme.accent.opacity(0.55)
+        }
+    }
+
+    private func toggleSortDirection() {
+        switch viewModel.sortDirection {
+        case .ascending:
+            viewModel.sortDirection = .descending
+        case .descending:
+            viewModel.sortDirection = .ascending
+        }
     }
 }
 

@@ -39,6 +39,8 @@
 "contacts.sort.direction.title" = "Redoslijed";
 "contacts.sort.direction.ascending" = "Uzlazno";
 "contacts.sort.direction.descending" = "Silazno";
+"contacts.sort.direction.short.ascending" = "Uzl";
+"contacts.sort.direction.short.descending" = "Sil";
 "contacts.unnamed" = "Neimenovani kontakt";
 "contacts.unknown" = "Nepoznat kontakt";
 "contacts.import.button" = "Uvezi iz adresara";
