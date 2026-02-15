@@ -3,10 +3,30 @@ import PhotosUI
 import MapKit
 import SwiftUI
 
+private enum ContactsLayoutMode: String, CaseIterable, Identifiable {
+    case list
+    case card
+    case relationship
+
+    var id: String { rawValue }
+
+    var localizedTitle: String {
+        switch self {
+        case .list:
+            return L10n.tr("contacts.view.mode.list")
+        case .card:
+            return L10n.tr("contacts.view.mode.card")
+        case .relationship:
+            return L10n.tr("contacts.view.mode.relationship")
+        }
+    }
+}
+
 struct ContactsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var pendingDelete: Contact?
     @FocusState private var isSearchFocused: Bool
+    @State private var layoutMode: ContactsLayoutMode = .card
 
     var body: some View {
         NavigationStack {
@@ -40,17 +60,45 @@ struct ContactsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                 }
                             } else {
-                                ForEach(viewModel.filteredContacts) { contact in
-                                    ContactCardView(
-                                        contact: contact,
-                                        relationshipLabel: { id in viewModel.relationshipTargetName(id) },
-                                        onRelationshipTap: { relationship in
-                                            viewModel.startEdit(contact)
-                                            viewModel.editRelationship(relationship)
-                                        },
-                                        onEdit: { viewModel.startEdit(contact) },
-                                        onDelete: { pendingDelete = contact }
-                                    )
+                                switch layoutMode {
+                                case .list:
+                                    ForEach(viewModel.filteredContacts) { contact in
+                                        ContactListRowView(
+                                            contact: contact,
+                                            onEdit: { viewModel.startEdit(contact) },
+                                            onDelete: { pendingDelete = contact }
+                                        )
+                                    }
+                                case .card:
+                                    ForEach(viewModel.filteredContacts) { contact in
+                                        ContactCardView(
+                                            contact: contact,
+                                            relationshipLabel: { id in viewModel.relationshipTargetName(id) },
+                                            onRelationshipTap: { relationship in
+                                                viewModel.startEdit(contact)
+                                                viewModel.editRelationship(relationship)
+                                            },
+                                            onEdit: { viewModel.startEdit(contact) },
+                                            onDelete: { pendingDelete = contact }
+                                        )
+                                    }
+                                case .relationship:
+                                    SectionCard {
+                                        Text(L10n.tr("contacts.relationship.title"))
+                                            .font(.system(.headline, design: .rounded).weight(.semibold))
+                                            .foregroundStyle(AppTheme.text)
+                                        Text(L10n.tr("contacts.relationship.subtitle"))
+                                            .font(.system(.subheadline, design: .rounded))
+                                            .foregroundStyle(AppTheme.muted)
+
+                                        RelationshipGraphView(
+                                            contacts: viewModel.filteredContacts,
+                                            onContactTap: { contact in
+                                                viewModel.startEdit(contact)
+                                            }
+                                        )
+                                        .frame(height: 380)
+                                    }
                                 }
                             }
                         }
@@ -160,62 +208,87 @@ struct ContactsView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text(L10n.tr("contacts.sort.field.title"))
+                    Text(L10n.tr("contacts.view.title"))
                         .font(.system(.caption, design: .rounded).weight(.semibold))
                         .textCase(.uppercase)
-                        .foregroundStyle(AppTheme.muted)
-
-                    Spacer()
-
-                    Text(savedContactsText)
-                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(AppTheme.muted)
                 }
 
                 HStack(spacing: 8) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(ContactSortField.allCases, id: \.self) { field in
-                                FilterChip(
-                                    label: field.localizedTitle,
-                                    isSelected: viewModel.sortField == field,
-                                    action: {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
-                                            viewModel.sortField = field
-                                        }
-                                    }
-                                )
+                    ForEach(ContactsLayoutMode.allCases) { mode in
+                        FilterChip(
+                            label: mode.localizedTitle,
+                            isSelected: layoutMode == mode,
+                            action: {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    layoutMode = mode
+                                }
                             }
-                        }
-                    }
-
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            toggleSortDirection()
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: sortDirectionIcon)
-                                .font(.system(size: 11, weight: .bold))
-                            Text(sortDirectionShortTitle)
-                                .font(.system(.caption, design: .rounded).weight(.semibold))
-                        }
-                        .foregroundStyle(sortDirectionForeground)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(sortDirectionBackground)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule().stroke(sortDirectionBorder, lineWidth: 1)
                         )
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.tr("contacts.sort.direction.title"))
-                    .accessibilityValue(viewModel.sortDirection.localizedTitle)
                 }
             }
-            .animation(.easeInOut(duration: 0.2), value: viewModel.sortField)
-            .animation(.easeInOut(duration: 0.2), value: viewModel.sortDirection)
+
+            if layoutMode != .relationship {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Text(L10n.tr("contacts.sort.field.title"))
+                            .font(.system(.caption, design: .rounded).weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(AppTheme.muted)
+
+                        Spacer()
+
+                        Text(savedContactsText)
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(AppTheme.muted)
+                    }
+
+                    HStack(spacing: 8) {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(ContactSortField.allCases, id: \.self) { field in
+                                    FilterChip(
+                                        label: field.localizedTitle,
+                                        isSelected: viewModel.sortField == field,
+                                        action: {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                viewModel.sortField = field
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                toggleSortDirection()
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: sortDirectionIcon)
+                                    .font(.system(size: 11, weight: .bold))
+                                Text(sortDirectionShortTitle)
+                                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                            }
+                            .foregroundStyle(sortDirectionForeground)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(sortDirectionBackground)
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule().stroke(sortDirectionBorder, lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.tr("contacts.sort.direction.title"))
+                        .accessibilityValue(viewModel.sortDirection.localizedTitle)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.2), value: viewModel.sortField)
+                .animation(.easeInOut(duration: 0.2), value: viewModel.sortDirection)
+            }
         }
     }
 
@@ -338,7 +411,7 @@ private struct ContactCardView: View {
     var body: some View {
         SectionCard {
             HStack(alignment: .center, spacing: 10) {
-                avatar
+                ContactAvatarView(contact: contact, size: 46)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(contact.displayName)
                         .font(.system(.title3, design: .serif).weight(.semibold))
@@ -479,28 +552,6 @@ private struct ContactCardView: View {
         }
     }
 
-    @ViewBuilder
-    private var avatar: some View {
-        if let base64 = contact.photoDataBase64,
-           let data = Data(base64Encoded: base64),
-           let image = UIImage(data: data) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 46, height: 46)
-                .clipShape(Circle())
-        } else {
-            Circle()
-                .fill(AppTheme.tint.opacity(0.14))
-                .frame(width: 46, height: 46)
-                .overlay {
-                    Text(contact.initials)
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
-                        .foregroundStyle(AppTheme.text)
-                }
-        }
-    }
-
     private var sortedRelationships: [ContactRelationship] {
         contact.relationships.sorted { lhs, rhs in
             if lhs.type.sortRank == rhs.type.sortRank {
@@ -521,6 +572,198 @@ private struct ContactCardView: View {
         formatter.setLocalizedDateFormatFromTemplate("d MMM, HH:mm")
         return formatter
     }()
+}
+
+private struct ContactListRowView: View {
+    let contact: Contact
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ContactAvatarView(contact: contact, size: 40)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(contact.displayName)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.text)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                Button(action: onEdit) {
+                    Image(systemName: "pencil")
+                }
+                Button(role: .destructive, action: onDelete) {
+                    Image(systemName: "trash")
+                }
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(AppTheme.muted)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AppTheme.stroke, lineWidth: 1)
+        )
+    }
+}
+
+private struct RelationshipGraphView: View {
+    let contacts: [Contact]
+    let onContactTap: (Contact) -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            let nodes = sortedContacts
+            let edges = graphEdges
+            let positions = Self.circularLayout(for: nodes, in: proxy.size)
+
+            if edges.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "point.3.connected.trianglepath.dotted")
+                        .font(.system(size: 26, weight: .medium))
+                        .foregroundStyle(AppTheme.muted)
+                    Text(L10n.tr("contacts.relationship.empty"))
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(AppTheme.muted)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ZStack {
+                    ForEach(edges) { edge in
+                        if let start = positions[edge.sourceId],
+                           let end = positions[edge.targetId] {
+                            Path { path in
+                                path.move(to: start)
+                                path.addLine(to: end)
+                            }
+                            .stroke(AppTheme.stroke.opacity(0.7), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                        }
+                    }
+
+                    ForEach(nodes) { contact in
+                        if let point = positions[contact.id] {
+                            VStack(spacing: 5) {
+                                Button {
+                                    onContactTap(contact)
+                                } label: {
+                                    ContactAvatarView(contact: contact, size: 44)
+                                }
+                                .buttonStyle(.plain)
+
+                                Text(contact.displayName)
+                                    .font(.system(.caption2, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(AppTheme.text)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: 84)
+                            }
+                            .position(point)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var sortedContacts: [Contact] {
+        contacts.sorted { lhs, rhs in
+            let lhsName = lhs.displayName.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            let rhsName = rhs.displayName.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            if lhsName != rhsName {
+                return lhsName < rhsName
+            }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+
+    private var graphEdges: [GraphEdge] {
+        let visibleIds = Set(contacts.map(\.id))
+        var seen: Set<String> = []
+        var result: [GraphEdge] = []
+
+        for contact in contacts {
+            for relationship in contact.relationships {
+                guard visibleIds.contains(relationship.contactId), relationship.contactId != contact.id else { continue }
+
+                let low = min(contact.id.uuidString, relationship.contactId.uuidString)
+                let high = max(contact.id.uuidString, relationship.contactId.uuidString)
+                let key = "\(low)|\(high)"
+
+                guard !seen.contains(key) else { continue }
+                seen.insert(key)
+                result.append(GraphEdge(sourceId: contact.id, targetId: relationship.contactId))
+            }
+        }
+
+        return result
+    }
+
+    private static func circularLayout(for contacts: [Contact], in size: CGSize) -> [UUID: CGPoint] {
+        guard !contacts.isEmpty else { return [:] }
+
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let radius = max(30, min(size.width, size.height) * 0.36)
+        let startAngle = -Double.pi / 2
+
+        if contacts.count == 1 {
+            return [contacts[0].id: center]
+        }
+
+        var positions: [UUID: CGPoint] = [:]
+        for (index, contact) in contacts.enumerated() {
+            let progress = Double(index) / Double(contacts.count)
+            let angle = startAngle + progress * Double.pi * 2
+            let point = CGPoint(
+                x: center.x + CGFloat(cos(angle)) * radius,
+                y: center.y + CGFloat(sin(angle)) * radius
+            )
+            positions[contact.id] = point
+        }
+        return positions
+    }
+}
+
+private struct GraphEdge: Identifiable {
+    let sourceId: UUID
+    let targetId: UUID
+
+    var id: String {
+        "\(sourceId.uuidString)|\(targetId.uuidString)"
+    }
+}
+
+private struct ContactAvatarView: View {
+    let contact: Contact
+    let size: CGFloat
+
+    var body: some View {
+        if let base64 = contact.photoDataBase64,
+           let data = Data(base64Encoded: base64),
+           let image = UIImage(data: data) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(Circle())
+        } else {
+            Circle()
+                .fill(AppTheme.tint.opacity(0.14))
+                .frame(width: size, height: size)
+                .overlay {
+                    Text(contact.initials)
+                        .font(.system(size: max(11, size * 0.33), weight: .bold, design: .rounded))
+                        .foregroundStyle(AppTheme.text)
+                }
+        }
+    }
 }
 
 private extension RelationshipType {

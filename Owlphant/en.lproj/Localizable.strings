@@ -90,6 +90,13 @@
 "contacts.filters.quick" = "Quick filters";
 "contacts.filters.all" = "All";
 "contacts.filters.activeCount" = "%d active";
+"contacts.view.title" = "View";
+"contacts.view.mode.list" = "List";
+"contacts.view.mode.card" = "Cards";
+"contacts.view.mode.relationship" = "Relationships";
+"contacts.relationship.title" = "Relationship graph";
+"contacts.relationship.subtitle" = "Showing links between currently filtered contacts.";
+"contacts.relationship.empty" = "No relationships match your current search and filters.";
 "contacts.form.notes" = "Notes";
 "contacts.form.save" = "Save contact";
 "contacts.form.update" = "Update contact";

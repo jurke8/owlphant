@@ -90,6 +90,13 @@
 "contacts.filters.quick" = "Brzi filteri";
 "contacts.filters.all" = "Sve";
 "contacts.filters.activeCount" = "%d aktivno";
+"contacts.view.title" = "Prikaz";
+"contacts.view.mode.list" = "Lista";
+"contacts.view.mode.card" = "Kartice";
+"contacts.view.mode.relationship" = "Odnosi";
+"contacts.relationship.title" = "Graf odnosa";
+"contacts.relationship.subtitle" = "Prikazuju se veze između trenutno filtriranih kontakata.";
+"contacts.relationship.empty" = "Nijedan odnos ne odgovara trenutnoj pretrazi i filtrima.";
 "contacts.form.notes" = "Bilješke";
 "contacts.form.save" = "Spremi kontakt";
 "contacts.form.update" = "Ažuriraj kontakt";
