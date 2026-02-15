@@ -2,7 +2,6 @@ import Combine
 import PhotosUI
 import MapKit
 import SwiftUI
-import UIKit
 
 private enum ContactsLayoutMode: String, CaseIterable, Identifiable {
     case list
@@ -28,6 +27,7 @@ struct ContactsView: View {
     @State private var pendingDelete: Contact?
     @State private var pendingBulkDelete = false
     @State private var selectedContactIDs: Set<UUID> = []
+    @State private var selectionHapticTick = 0
     @FocusState private var isSearchFocused: Bool
     @State private var layoutMode: ContactsLayoutMode = .list
 
@@ -223,33 +223,11 @@ struct ContactsView: View {
             let validIDs = Set(newValue.map(\.id))
             selectedContactIDs = selectedContactIDs.intersection(validIDs)
         }
+        .sensoryFeedback(.selection, trigger: selectionHapticTick)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if isSelectionMode {
-                HStack(spacing: 8) {
-                    Text(L10n.format("contacts.selection.count", selectedContactIDs.count))
-                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(AppTheme.text)
-                    Spacer(minLength: 0)
-                    Button(L10n.tr("contacts.selection.cancel")) {
-                        clearSelection()
-                    }
-                    .font(.system(.caption, design: .rounded).weight(.semibold))
-                    .foregroundStyle(AppTheme.tint)
-                    .buttonStyle(.plain)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 9)
-                .background(AppTheme.surfaceAlt)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(AppTheme.stroke, lineWidth: 1)
-                )
-            }
-
             searchPill
 
             VStack(alignment: .leading, spacing: 8) {
@@ -523,8 +501,7 @@ struct ContactsView: View {
     }
 
     private func triggerSelectionHaptic() {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        selectionHapticTick += 1
     }
 }
 
