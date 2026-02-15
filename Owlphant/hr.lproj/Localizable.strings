@@ -181,19 +181,13 @@
 "map.filters.activeCount" = "%d aktivno";
 
 "help.feedback.title" = "Podijeli ideju";
-"help.feedback.subtitle" = "Napiši što bi ti pomoglo da u Owlphantu gradiš još bolje odnose.";
-"help.feedback.subject.placeholder" = "Naslov";
 "help.feedback.message.placeholder" = "Opiši svoju ideju, problem ili prijedlog funkcionalnosti";
-"help.feedback.contact.placeholder" = "Tvoja e-pošta (nije obavezno)";
 "help.feedback.send" = "Pošalji povratnu informaciju";
 "help.feedback.success" = "Hvala, tvoja povratna informacija je uspješno pripremljena.";
-"help.feedback.error.required" = "Unesi naslov i prijedlog.";
-"help.feedback.error.email" = "Unesi valjanu adresu e-pošte.";
+"help.feedback.error.required" = "Unesi poruku.";
 "help.feedback.error.sendUnavailable" = "Pošta nije dostupna na ovom uređaju.";
 "help.feedback.error.sendFailed" = "Trenutno nije moguće poslati prijedlog.";
 "help.feedback.mail.body.suggestion" = "Prijedlog";
-"help.feedback.mail.body.contact" = "Kontakt e-pošta";
-"help.feedback.mail.body.noContact" = "Nije uneseno";
 "help.feedback.mail.body.details" = "Detalji aplikacije";
 "help.feedback.mail.body.device" = "Uređaj";
 "help.feedback.mail.body.system" = "Sustav";

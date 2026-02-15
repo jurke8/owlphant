@@ -239,8 +239,7 @@ struct EventsView: View {
             return time
         case .interaction:
             let day = Self.dayMonthFormatter.string(from: date)
-            let time = Self.timeFormatter.string(from: date)
-            return "\(day) \(time)"
+            return day
         }
     }
 
@@ -368,7 +367,7 @@ struct EventsView: View {
         switch (lhs.date, rhs.date) {
         case let (.some(lhsDate), .some(rhsDate)):
             if lhsDate != rhsDate {
-                return lhsDate > rhsDate
+                return lhsDate < rhsDate
             }
         case (.some, .none):
             return true

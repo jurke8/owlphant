@@ -7,11 +7,7 @@ import UIKit
 #endif
 
 struct HelpView: View {
-    @Environment(\.openURL) private var openURL
-
-    @State private var subject = ""
     @State private var suggestion = ""
-    @State private var contactEmail = ""
     @State private var isPresentingMailComposer = false
     @State private var alertMessage: String?
 
@@ -27,21 +23,8 @@ struct HelpView: View {
                                 .font(.system(.headline, design: .rounded).weight(.semibold))
                                 .foregroundStyle(AppTheme.text)
 
-                            Text(L10n.tr("help.feedback.subtitle"))
-                                .font(.system(.subheadline, design: .rounded))
-                                .foregroundStyle(AppTheme.muted)
-
-                            TextField(L10n.tr("help.feedback.subject.placeholder"), text: $subject)
-                                .appInputChrome()
-
                             TextField(L10n.tr("help.feedback.message.placeholder"), text: $suggestion, axis: .vertical)
                                 .lineLimit(5 ... 9)
-                                .appInputChrome()
-
-                            TextField(L10n.tr("help.feedback.contact.placeholder"), text: $contactEmail)
-                                .keyboardType(.emailAddress)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled(true)
                                 .appInputChrome()
 
                             Button(L10n.tr("help.feedback.send")) {
@@ -62,7 +45,7 @@ struct HelpView: View {
 #if canImport(MessageUI)
             SupportMailComposeSheet(
                 recipient: supportEmail,
-                subject: sanitizedSubject,
+                subject: L10n.tr("help.feedback.title"),
                 body: emailBody,
                 onResult: handleMailComposerResult
             )
@@ -82,20 +65,11 @@ struct HelpView: View {
         }
     }
 
-    private var sanitizedSubject: String {
-        subject.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     private var sanitizedSuggestion: String {
         suggestion.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var sanitizedContactEmail: String {
-        contactEmail.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     private var emailBody: String {
-        let contactValue = sanitizedContactEmail.isEmpty ? L10n.tr("help.feedback.mail.body.noContact") : sanitizedContactEmail
         let details = [
             "\(L10n.tr("help.feedback.mail.body.device")): \(deviceSummary)",
             "\(L10n.tr("help.feedback.mail.body.system")): \(systemSummary)",
@@ -104,7 +78,7 @@ struct HelpView: View {
             "\(L10n.tr("help.feedback.mail.body.time")): \(timestampSummary)"
         ].joined(separator: "\n")
 
-        return "\(L10n.tr("help.feedback.mail.body.suggestion")):\n\(sanitizedSuggestion)\n\n\(L10n.tr("help.feedback.mail.body.contact")): \(contactValue)\n\n\(L10n.tr("help.feedback.mail.body.details")):\n\(details)"
+        return "\(L10n.tr("help.feedback.mail.body.suggestion")):\n\(sanitizedSuggestion)\n\n\(L10n.tr("help.feedback.mail.body.details")):\n\(details)"
     }
 
     private var deviceSummary: String {
@@ -136,13 +110,8 @@ struct HelpView: View {
     }
 
     private func sendSuggestion() {
-        guard !sanitizedSubject.isEmpty, !sanitizedSuggestion.isEmpty else {
+        guard !sanitizedSuggestion.isEmpty else {
             alertMessage = L10n.tr("help.feedback.error.required")
-            return
-        }
-
-        if !sanitizedContactEmail.isEmpty, !isValidEmail(sanitizedContactEmail) {
-            alertMessage = L10n.tr("help.feedback.error.email")
             return
         }
 
@@ -151,30 +120,7 @@ struct HelpView: View {
             return
         }
 
-        guard let mailURL = mailtoURL() else {
-            alertMessage = L10n.tr("help.feedback.error.sendUnavailable")
-            return
-        }
-
-        openURL(mailURL) { accepted in
-            if accepted {
-                clearForm()
-                alertMessage = L10n.tr("help.feedback.success")
-            } else {
-                alertMessage = L10n.tr("help.feedback.error.sendUnavailable")
-            }
-        }
-    }
-
-    private func mailtoURL() -> URL? {
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = supportEmail
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: sanitizedSubject),
-            URLQueryItem(name: "body", value: emailBody)
-        ]
-        return components.url
+        alertMessage = L10n.tr("help.feedback.error.sendUnavailable")
     }
 
     private var canUseMailComposer: Bool {
@@ -205,19 +151,7 @@ struct HelpView: View {
     #endif
 
     private func clearForm() {
-        subject = ""
         suggestion = ""
-        contactEmail = ""
-    }
-
-    private func isValidEmail(_ value: String) -> Bool {
-        guard !value.contains(" ") else { return false }
-        let parts = value.split(separator: "@", omittingEmptySubsequences: false)
-        guard parts.count == 2 else { return false }
-        let localPart = String(parts[0])
-        let domainPart = String(parts[1])
-        guard !localPart.isEmpty, !domainPart.isEmpty else { return false }
-        return domainPart.contains(".")
     }
 }
 
