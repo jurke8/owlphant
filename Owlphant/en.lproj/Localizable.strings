@@ -91,7 +91,7 @@
 "contacts.form.groups.quickAdd" = "Quick add groups";
 "contacts.form.groups.createPlaceholder" = "Create custom group";
 "contacts.form.groups.create" = "Create";
-"contacts.filters.quick" = "Quick filters";
+"contacts.filters.quick" = "Groups";
 "contacts.filters.all" = "All";
 "contacts.filters.activeCount" = "%d active";
 "contacts.view.title" = "View";

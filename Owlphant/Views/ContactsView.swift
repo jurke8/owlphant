@@ -24,7 +24,6 @@ private enum ContactsLayoutMode: String, CaseIterable, Identifiable {
 
 struct ContactsView: View {
     @ObservedObject var viewModel: ContactsViewModel
-    @State private var pendingDelete: Contact?
     @State private var pendingBulkDelete = false
     @State private var selectedContactIDs: Set<UUID> = []
     @State private var selectionHapticTick = 0
@@ -78,8 +77,7 @@ struct ContactsView: View {
                                                         viewModel.startEdit(contact)
                                                     }
                                                 },
-                                                onLongPress: { beginSelection(with: contact.id) },
-                                                onDelete: { pendingDelete = contact }
+                                                onLongPress: { beginSelection(with: contact.id) }
                                             )
                                             .id("list-\(contact.id.uuidString)")
                                         }
@@ -98,12 +96,12 @@ struct ContactsView: View {
                                                 onTap: {
                                                     if isSelectionMode {
                                                         toggleSelection(contact.id)
+                                                    } else {
+                                                        viewModel.startEdit(contact)
                                                     }
                                                 },
                                                 onLongPress: { beginSelection(with: contact.id) },
-                                                onToggleSelection: { toggleSelection(contact.id) },
-                                                onEdit: { viewModel.startEdit(contact) },
-                                                onDelete: { pendingDelete = contact }
+                                                onToggleSelection: { toggleSelection(contact.id) }
                                             )
                                             .id("card-\(contact.id.uuidString)")
                                         }
@@ -139,7 +137,7 @@ struct ContactsView: View {
             .toolbar {
                 if isSelectionMode {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button(L10n.tr("contacts.selection.cancel")) {
+                        Button(L10n.tr("common.cancel")) {
                             clearSelection()
                         }
                     }
@@ -172,22 +170,6 @@ struct ContactsView: View {
         }
         .sheet(isPresented: $viewModel.isPresentingForm) {
             ContactFormSheet(viewModel: viewModel)
-        }
-        .alert(L10n.tr("contacts.alert.delete.title"), isPresented: Binding(
-            get: { pendingDelete != nil },
-            set: { if !$0 { pendingDelete = nil } }
-        )) {
-            Button(L10n.tr("common.cancel"), role: .cancel) {
-                pendingDelete = nil
-            }
-            Button(L10n.tr("common.delete"), role: .destructive) {
-                if let pendingDelete {
-                    Task { await viewModel.delete(pendingDelete) }
-                }
-                self.pendingDelete = nil
-            }
-        } message: {
-            Text(L10n.tr("contacts.alert.delete.message"))
         }
         .alert(L10n.tr("contacts.alert.delete.multiple.title"), isPresented: $pendingBulkDelete) {
             Button(L10n.tr("common.cancel"), role: .cancel) {
@@ -514,8 +496,6 @@ private struct ContactCardView: View {
     let onTap: () -> Void
     let onLongPress: () -> Void
     let onToggleSelection: () -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
 
     var body: some View {
         SectionCard {
@@ -546,18 +526,6 @@ private struct ContactCardView: View {
                     }
                 }
                 Spacer()
-                if !isSelectionMode {
-                    HStack(spacing: 8) {
-                        Button(action: onEdit) {
-                            Image(systemName: "pencil")
-                        }
-                        Button(role: .destructive, action: onDelete) {
-                            Image(systemName: "trash")
-                        }
-                    }
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(AppTheme.muted)
-                }
             }
 
             if let birthday = contact.birthday, !birthday.isEmpty {
@@ -711,7 +679,6 @@ private struct ContactListRowView: View {
     let isSelected: Bool
     let onPrimaryTap: () -> Void
     let onLongPress: () -> Void
-    let onDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -730,16 +697,6 @@ private struct ContactListRowView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture(perform: onPrimaryTap)
-
-            if !isSelectionMode {
-                HStack(spacing: 8) {
-                    Button(role: .destructive, action: onDelete) {
-                        Image(systemName: "trash")
-                    }
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(AppTheme.muted)
-            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
@@ -947,6 +904,7 @@ private struct ContactFormSheet: View {
     @State private var isCoffeeDatePickerPresented = false
     @State private var hasInteractedWithForm = false
     @State private var groupDraft = ""
+    @State private var pendingDeleteContact = false
 
     var body: some View {
         NavigationStack {
@@ -1068,6 +1026,13 @@ private struct ContactFormSheet: View {
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(!viewModel.canSubmitForm)
 
+                        if viewModel.selectedContactId != nil {
+                            Button(L10n.tr("common.delete"), role: .destructive) {
+                                pendingDeleteContact = true
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                        }
+
                         if hasInteractedWithForm, let validationMessage = viewModel.formValidationMessage {
                             Text(validationMessage)
                                 .font(.system(.footnote, design: .rounded))
@@ -1151,6 +1116,29 @@ private struct ContactFormSheet: View {
             }
             .presentationDetents([.medium, .large])
         }
+        .alert(L10n.tr("contacts.alert.delete.title"), isPresented: $pendingDeleteContact) {
+            Button(L10n.tr("common.cancel"), role: .cancel) {
+                pendingDeleteContact = false
+            }
+            Button(L10n.tr("common.delete"), role: .destructive) {
+                guard let contact = selectedContactForDelete else {
+                    pendingDeleteContact = false
+                    return
+                }
+                Task {
+                    await viewModel.delete(contact)
+                    viewModel.cancelForm()
+                }
+                pendingDeleteContact = false
+            }
+        } message: {
+            Text(L10n.tr("contacts.alert.delete.message"))
+        }
+    }
+
+    private var selectedContactForDelete: Contact? {
+        guard let selectedContactId = viewModel.selectedContactId else { return nil }
+        return viewModel.contacts.first { $0.id == selectedContactId }
     }
 
     private var photoRow: some View {

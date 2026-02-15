@@ -91,7 +91,7 @@
 "contacts.form.groups.quickAdd" = "Brzo dodaj grupe";
 "contacts.form.groups.createPlaceholder" = "Kreiraj prilagođenu grupu";
 "contacts.form.groups.create" = "Kreiraj";
-"contacts.filters.quick" = "Brzi filteri";
+"contacts.filters.quick" = "Grupe";
 "contacts.filters.all" = "Sve";
 "contacts.filters.activeCount" = "%d aktivno";
 "contacts.view.title" = "Prikaz";

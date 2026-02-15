@@ -786,7 +786,6 @@ private struct ManageGroupsSheet: View {
     @State private var mergeTargetID = ""
     @State private var pendingDelete: ContactsViewModel.GroupUsage?
     @State private var localErrorMessage: String?
-    @State private var groupSearchQuery = ""
 
     var body: some View {
         NavigationStack {
@@ -801,71 +800,50 @@ private struct ManageGroupsSheet: View {
                             }
                         } else {
                             SectionCard {
-                                TextField(L10n.tr("settings.groups.searchPlaceholder"), text: $groupSearchQuery)
-                                    .textInputAutocapitalization(.never)
-                                    .appInputChrome()
-                            }
-
-                            SectionCard {
-                                if filteredGroups.isEmpty {
-                                    Text(L10n.tr("settings.groups.searchEmpty"))
-                                        .font(.system(.subheadline, design: .rounded))
-                                        .foregroundStyle(AppTheme.muted)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .background(AppTheme.surfaceAlt.opacity(0.5))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(AppTheme.stroke, lineWidth: 1)
-                                        )
-                                } else {
-                                    ForEach(filteredGroups) { group in
-                                        HStack(spacing: 10) {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(group.name)
-                                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                                                    .foregroundStyle(AppTheme.text)
-                                                Text(L10n.format("settings.groups.contactsCount", group.count))
-                                                    .font(.system(.caption, design: .rounded))
-                                                    .foregroundStyle(AppTheme.muted)
-                                            }
-
-                                            Spacer()
-
-                                            Menu {
-                                                Button(L10n.tr("settings.groups.rename")) {
-                                                    renameValue = group.name
-                                                    pendingRename = group
-                                                }
-
-                                                if viewModel.groupsWithUsage.count > 1 {
-                                                    Button(L10n.tr("settings.groups.merge")) {
-                                                        mergeTargetID = mergeTargets(for: group).first?.id ?? ""
-                                                        pendingMerge = group
-                                                    }
-                                                }
-
-                                                Button(L10n.tr("settings.groups.delete"), role: .destructive) {
-                                                    pendingDelete = group
-                                                }
-                                            } label: {
-                                                Image(systemName: "ellipsis.circle")
-                                                    .font(.system(size: 18, weight: .semibold))
-                                                    .foregroundStyle(AppTheme.muted)
-                                            }
-                                            .buttonStyle(.plain)
+                                ForEach(viewModel.groupsWithUsage) { group in
+                                    HStack(spacing: 10) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(group.name)
+                                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                                .foregroundStyle(AppTheme.text)
+                                            Text(L10n.format("settings.groups.contactsCount", group.count))
+                                                .font(.system(.caption, design: .rounded))
+                                                .foregroundStyle(AppTheme.muted)
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .background(AppTheme.surfaceAlt.opacity(0.5))
-                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(AppTheme.stroke, lineWidth: 1)
-                                        )
+
+                                        Spacer()
+
+                                        Menu {
+                                            Button(L10n.tr("settings.groups.rename")) {
+                                                renameValue = group.name
+                                                pendingRename = group
+                                            }
+
+                                            if viewModel.groupsWithUsage.count > 1 {
+                                                Button(L10n.tr("settings.groups.merge")) {
+                                                    mergeTargetID = mergeTargets(for: group).first?.id ?? ""
+                                                    pendingMerge = group
+                                                }
+                                            }
+
+                                            Button(L10n.tr("settings.groups.delete"), role: .destructive) {
+                                                pendingDelete = group
+                                            }
+                                        } label: {
+                                            Image(systemName: "ellipsis.circle")
+                                                .font(.system(size: 18, weight: .semibold))
+                                                .foregroundStyle(AppTheme.muted)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .background(AppTheme.surfaceAlt.opacity(0.5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(AppTheme.stroke, lineWidth: 1)
+                                    )
                                 }
                             }
                         }
@@ -982,16 +960,6 @@ private struct ManageGroupsSheet: View {
 
     private func mergeTargets(for source: ContactsViewModel.GroupUsage) -> [ContactsViewModel.GroupUsage] {
         viewModel.groupsWithUsage.filter { $0.id != source.id }
-    }
-
-    private var filteredGroups: [ContactsViewModel.GroupUsage] {
-        let trimmed = groupSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return viewModel.groupsWithUsage }
-
-        let normalizedQuery = normalizeGroup(trimmed)
-        return viewModel.groupsWithUsage.filter { group in
-            normalizeGroup(group.name).contains(normalizedQuery)
-        }
     }
 
     private func submitRename(for group: ContactsViewModel.GroupUsage) {

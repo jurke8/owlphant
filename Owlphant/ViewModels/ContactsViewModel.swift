@@ -89,7 +89,7 @@ final class ContactsViewModel: ObservableObject {
     private let backupService = EncryptedBackupService()
     private let reminderService = BirthdayReminderService.shared
     private let eventStore = EKEventStore()
-    private static let suggestedGroups = ["Work", "Family", "Networking"]
+    private static let suggestedGroups = ["Family", "Work", "School"]
 
     private enum SocialValidationError: Error {
         case invalidURL
