@@ -524,6 +524,23 @@ final class ContactsViewModel: ObservableObject {
         }
     }
 
+    func deleteContacts(ids: Set<UUID>) async {
+        guard !ids.isEmpty else { return }
+
+        var updatedContacts = contacts.filter { !ids.contains($0.id) }
+        for idx in updatedContacts.indices {
+            updatedContacts[idx].relationships.removeAll { ids.contains($0.contactId) }
+        }
+
+        do {
+            try await store.saveContacts(updatedContacts)
+            contacts = updatedContacts.sorted { $0.updatedAt > $1.updatedAt }
+            await syncReminders()
+        } catch {
+            errorMessage = L10n.tr("error.contact.delete")
+        }
+    }
+
     func addOrUpdateRelationshipDraft() {
         guard let targetId = form.relationshipDraftTargetId else { return }
         let relation = ContactRelationship(contactId: targetId, type: form.relationshipDraftType)

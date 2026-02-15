@@ -2,6 +2,7 @@ import Combine
 import PhotosUI
 import MapKit
 import SwiftUI
+import UIKit
 
 private enum ContactsLayoutMode: String, CaseIterable, Identifiable {
     case list
@@ -25,6 +26,8 @@ private enum ContactsLayoutMode: String, CaseIterable, Identifiable {
 struct ContactsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var pendingDelete: Contact?
+    @State private var pendingBulkDelete = false
+    @State private var selectedContactIDs: Set<UUID> = []
     @FocusState private var isSearchFocused: Bool
     @State private var layoutMode: ContactsLayoutMode = .list
 
@@ -66,7 +69,16 @@ struct ContactsView: View {
                                         ForEach(viewModel.filteredContacts) { contact in
                                             ContactListRowView(
                                                 contact: contact,
-                                                onEdit: { viewModel.startEdit(contact) },
+                                                isSelectionMode: isSelectionMode,
+                                                isSelected: isContactSelected(contact.id),
+                                                onPrimaryTap: {
+                                                    if isSelectionMode {
+                                                        toggleSelection(contact.id)
+                                                    } else {
+                                                        viewModel.startEdit(contact)
+                                                    }
+                                                },
+                                                onLongPress: { beginSelection(with: contact.id) },
                                                 onDelete: { pendingDelete = contact }
                                             )
                                             .id("list-\(contact.id.uuidString)")
@@ -77,9 +89,19 @@ struct ContactsView: View {
                                                 contact: contact,
                                                 relationshipLabel: { id in viewModel.relationshipTargetName(id) },
                                                 onRelationshipTap: { relationship in
+                                                    guard !isSelectionMode else { return }
                                                     viewModel.startEdit(contact)
                                                     viewModel.editRelationship(relationship)
                                                 },
+                                                isSelectionMode: isSelectionMode,
+                                                isSelected: isContactSelected(contact.id),
+                                                onTap: {
+                                                    if isSelectionMode {
+                                                        toggleSelection(contact.id)
+                                                    }
+                                                },
+                                                onLongPress: { beginSelection(with: contact.id) },
+                                                onToggleSelection: { toggleSelection(contact.id) },
                                                 onEdit: { viewModel.startEdit(contact) },
                                                 onDelete: { pendingDelete = contact }
                                             )
@@ -115,12 +137,30 @@ struct ContactsView: View {
             .navigationTitle(L10n.tr("contacts.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if isSelectionMode {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(L10n.tr("contacts.selection.cancel")) {
+                            clearSelection()
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .destructive) {
+                            pendingBulkDelete = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(selectedContactIDs.isEmpty)
+                        .accessibilityLabel(L10n.tr("common.delete"))
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.startCreate()
-                    } label: {
-                        Image(systemName: "plus")
-                            .foregroundStyle(AppTheme.tint)
+                    if !isSelectionMode {
+                        Button {
+                            viewModel.startCreate()
+                        } label: {
+                            Image(systemName: "plus")
+                                .foregroundStyle(AppTheme.tint)
+                        }
                     }
                 }
             }
@@ -149,6 +189,21 @@ struct ContactsView: View {
         } message: {
             Text(L10n.tr("contacts.alert.delete.message"))
         }
+        .alert(L10n.tr("contacts.alert.delete.multiple.title"), isPresented: $pendingBulkDelete) {
+            Button(L10n.tr("common.cancel"), role: .cancel) {
+                pendingBulkDelete = false
+            }
+            Button(L10n.tr("common.delete"), role: .destructive) {
+                let ids = selectedContactIDs
+                Task {
+                    await viewModel.deleteContacts(ids: ids)
+                    clearSelection()
+                }
+                pendingBulkDelete = false
+            }
+        } message: {
+            Text(L10n.format("contacts.alert.delete.multiple.message", selectedContactIDs.count))
+        }
         .alert(L10n.tr("common.notice"), isPresented: Binding(
             get: { !viewModel.isPresentingForm && viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.errorMessage = nil } }
@@ -159,10 +214,42 @@ struct ContactsView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+        .onChange(of: layoutMode) { _, newValue in
+            if newValue == .relationship {
+                clearSelection()
+            }
+        }
+        .onChange(of: viewModel.contacts) { _, newValue in
+            let validIDs = Set(newValue.map(\.id))
+            selectedContactIDs = selectedContactIDs.intersection(validIDs)
+        }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if isSelectionMode {
+                HStack(spacing: 8) {
+                    Text(L10n.format("contacts.selection.count", selectedContactIDs.count))
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(AppTheme.text)
+                    Spacer(minLength: 0)
+                    Button(L10n.tr("contacts.selection.cancel")) {
+                        clearSelection()
+                    }
+                    .font(.system(.caption, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.tint)
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(AppTheme.surfaceAlt)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppTheme.stroke, lineWidth: 1)
+                )
+            }
+
             searchPill
 
             VStack(alignment: .leading, spacing: 8) {
@@ -404,19 +491,68 @@ struct ContactsView: View {
             viewModel.sortDirection = .ascending
         }
     }
+
+    private var isSelectionMode: Bool {
+        !selectedContactIDs.isEmpty
+    }
+
+    private func isContactSelected(_ id: UUID) -> Bool {
+        selectedContactIDs.contains(id)
+    }
+
+    private func beginSelection(with id: UUID) {
+        guard layoutMode != .relationship else { return }
+        let wasSelectionMode = isSelectionMode
+        selectedContactIDs.insert(id)
+        if !wasSelectionMode {
+            triggerSelectionHaptic()
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if selectedContactIDs.contains(id) {
+            selectedContactIDs.remove(id)
+        } else {
+            selectedContactIDs.insert(id)
+        }
+    }
+
+    private func clearSelection() {
+        selectedContactIDs.removeAll()
+        pendingBulkDelete = false
+    }
+
+    private func triggerSelectionHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
 }
 
 private struct ContactCardView: View {
     let contact: Contact
     let relationshipLabel: (UUID) -> String
     let onRelationshipTap: (ContactRelationship) -> Void
+    let isSelectionMode: Bool
+    let isSelected: Bool
+    let onTap: () -> Void
+    let onLongPress: () -> Void
+    let onToggleSelection: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         SectionCard {
             HStack(alignment: .center, spacing: 10) {
-                ContactAvatarView(contact: contact, size: 46)
+                if isSelectionMode {
+                    Button(action: onToggleSelection) {
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(isSelected ? AppTheme.tint : AppTheme.muted)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    ContactAvatarView(contact: contact, size: 46)
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(contact.displayName)
                         .font(.system(.title3, design: .serif).weight(.semibold))
@@ -433,16 +569,18 @@ private struct ContactCardView: View {
                     }
                 }
                 Spacer()
-                HStack(spacing: 8) {
-                    Button(action: onEdit) {
-                        Image(systemName: "pencil")
+                if !isSelectionMode {
+                    HStack(spacing: 8) {
+                        Button(action: onEdit) {
+                            Image(systemName: "pencil")
+                        }
+                        Button(role: .destructive, action: onDelete) {
+                            Image(systemName: "trash")
+                        }
                     }
-                    Button(role: .destructive, action: onDelete) {
-                        Image(systemName: "trash")
-                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(AppTheme.muted)
                 }
-                .buttonStyle(.borderless)
-                .foregroundStyle(AppTheme.muted)
             }
 
             if let birthday = contact.birthday, !birthday.isEmpty {
@@ -555,6 +693,17 @@ private struct ContactCardView: View {
             }
 
         }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                onTap()
+            }
+        )
+        .onLongPressGesture(perform: onLongPress)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(isSelected ? AppTheme.tint : Color.clear, lineWidth: 2)
+        )
     }
 
     private var sortedRelationships: [ContactRelationship] {
@@ -581,39 +730,50 @@ private struct ContactCardView: View {
 
 private struct ContactListRowView: View {
     let contact: Contact
-    let onEdit: () -> Void
+    let isSelectionMode: Bool
+    let isSelected: Bool
+    let onPrimaryTap: () -> Void
+    let onLongPress: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            Button(action: onEdit) {
-                HStack(spacing: 0) {
-                    Text(listDisplayName)
-                        .font(.system(.footnote, design: .rounded).weight(.semibold))
-                        .foregroundStyle(AppTheme.text)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                }
-                .contentShape(Rectangle())
+            if isSelectionMode {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(isSelected ? AppTheme.tint : AppTheme.muted)
             }
-            .buttonStyle(.plain)
 
-            HStack(spacing: 8) {
-                Button(role: .destructive, action: onDelete) {
-                    Image(systemName: "trash")
-                }
+            HStack(spacing: 0) {
+                Text(listDisplayName)
+                    .font(.system(.footnote, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppTheme.text)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(AppTheme.muted)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: onPrimaryTap)
+
+            if !isSelectionMode {
+                HStack(spacing: 8) {
+                    Button(role: .destructive, action: onDelete) {
+                        Image(systemName: "trash")
+                    }
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(AppTheme.muted)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(AppTheme.surface)
+        .background(isSelected ? AppTheme.tint.opacity(0.16) : AppTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(AppTheme.stroke, lineWidth: 1)
+                .stroke(isSelected ? AppTheme.tint.opacity(0.7) : AppTheme.stroke, lineWidth: 1)
         )
+        .contentShape(Rectangle())
+        .onLongPressGesture(perform: onLongPress)
     }
 
     private var listDisplayName: String {

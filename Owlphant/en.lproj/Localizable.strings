@@ -28,6 +28,10 @@
 "contacts.empty.subtitle" = "Add someone above or import from your phone contacts once imports are enabled.";
 "contacts.alert.delete.title" = "Delete contact";
 "contacts.alert.delete.message" = "This contact will be removed from this device.";
+"contacts.alert.delete.multiple.title" = "Delete contacts";
+"contacts.alert.delete.multiple.message" = "Delete %d selected contacts from this device?";
+"contacts.selection.count" = "%d selected";
+"contacts.selection.cancel" = "Cancel selection";
 "contacts.header.subtitle" = "Build strong relationships with reminders and insights.";
 "contacts.header.searchPlaceholder" = "Search by name, place, birthday, notes";
 "contacts.header.recent" = "Recent";
