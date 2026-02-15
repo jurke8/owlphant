@@ -10,7 +10,7 @@ struct PeopleMapView: View {
                 if viewModel.pins.isEmpty && viewModel.userCoordinate == nil {
                     ScreenBackground {
                         VStack(alignment: .leading, spacing: 12) {
-                            mapFiltersBar
+                            mapTopActions
 
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(L10n.tr("map.empty.title"))
@@ -78,72 +78,85 @@ struct PeopleMapView: View {
             MapPitchToggle()
             MapUserLocationButton()
         }
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Spacer()
-                mapResetButton
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
-        }
         .safeAreaInset(edge: .top) {
-            mapFiltersBar
+            HStack {
+                mapTopActions
+                Spacer()
+            }
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
         }
     }
 
-    private var mapFiltersBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text(L10n.tr("map.filters.quick"))
-                    .font(.system(.caption, design: .rounded).weight(.semibold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(AppTheme.muted)
+    private var mapTopActions: some View {
+        HStack(spacing: 8) {
+            mapFiltersButton
+            mapResetButton
+        }
+    }
 
-                if viewModel.activeGroupFilterCount > 0 {
-                    Text(L10n.format("map.filters.activeCount", viewModel.activeGroupFilterCount))
-                        .font(.system(.caption2, design: .rounded).weight(.bold))
-                        .foregroundStyle(AppTheme.text)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppTheme.surfaceAlt)
-                        .clipShape(Capsule())
-                }
-
-                if viewModel.activeGroupFilterCount > 0 {
-                    Button(L10n.tr("common.clear")) {
-                        viewModel.clearGroupFilters()
+    private var mapFiltersButton: some View {
+        Menu {
+            Button {
+                viewModel.clearGroupFilters()
+            } label: {
+                HStack {
+                    Text(L10n.tr("map.filters.all"))
+                    if viewModel.selectedGroups.isEmpty {
+                        Image(systemName: "checkmark")
                     }
-                    .font(.system(.caption, design: .rounded).weight(.semibold))
-                    .foregroundStyle(AppTheme.tint)
-                    .buttonStyle(.plain)
                 }
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    FilterChip(
-                        label: L10n.tr("map.filters.all"),
-                        isSelected: viewModel.selectedGroups.isEmpty,
-                        action: { viewModel.clearGroupFilters() }
-                    )
+            if !viewModel.availableGroups.isEmpty {
+                Divider()
 
-                    ForEach(viewModel.availableGroups, id: \.self) { group in
-                        FilterChip(
-                            label: group,
-                            isSelected: viewModel.isGroupSelected(group),
-                            action: { viewModel.toggleGroupSelection(group) }
-                        )
+                ForEach(viewModel.availableGroups, id: \.self) { group in
+                    Button {
+                        viewModel.toggleGroupSelection(group)
+                    } label: {
+                        HStack {
+                            Text(group)
+                            if viewModel.isGroupSelected(group) {
+                                Image(systemName: "checkmark")
+                            }
+                        }
                     }
+                }
+            }
+
+            if viewModel.activeGroupFilterCount > 0 {
+                Divider()
+
+                Button(L10n.tr("common.clear"), role: .destructive) {
+                    viewModel.clearGroupFilters()
+                }
+            }
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppTheme.text)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(Circle().stroke(AppTheme.stroke.opacity(0.8), lineWidth: 1))
+
+                if viewModel.activeGroupFilterCount > 0 {
+                    Text("\(viewModel.activeGroupFilterCount)")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(AppTheme.tint, in: Capsule())
+                        .offset(x: 4, y: -4)
                 }
             }
         }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(AppTheme.stroke.opacity(0.8), lineWidth: 1)
+        .accessibilityLabel(L10n.tr("map.filters.quick"))
+        .accessibilityValue(
+            viewModel.activeGroupFilterCount > 0
+                ? L10n.format("map.filters.activeCount", viewModel.activeGroupFilterCount)
+                : L10n.tr("map.filters.all")
         )
     }
 

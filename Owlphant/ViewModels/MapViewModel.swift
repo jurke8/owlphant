@@ -46,7 +46,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private let locationManager = CLLocationManager()
     private var locationCache: [String: CLLocationCoordinate2D] = [:]
     private var allContacts: [Contact] = []
-    private static let suggestedGroups = ["Work", "Family", "Networking"]
+    private static let suggestedGroups = ["Work", "Family"]
 
     override init() {
         super.init()
