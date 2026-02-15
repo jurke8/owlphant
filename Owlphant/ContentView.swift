@@ -28,6 +28,11 @@ struct ContentView: View {
                     Label(L10n.tr("tab.map"), systemImage: "map.fill")
                 }
 
+            HelpView()
+                .tabItem {
+                    Label(L10n.tr("tab.help"), systemImage: "questionmark.circle.fill")
+                }
+
             SettingsView(viewModel: contactsViewModel)
                 .tabItem {
                     Label(L10n.tr("tab.settings"), systemImage: "gearshape.fill")

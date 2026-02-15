@@ -1,6 +1,7 @@
 "tab.contacts" = "Contacts";
 "tab.events" = "Events";
 "tab.map" = "Map";
+"tab.help" = "Help";
 "tab.settings" = "Settings";
 
 "common.ok" = "OK";
@@ -178,6 +179,27 @@
 "map.filters.quick" = "Quick filters";
 "map.filters.all" = "All";
 "map.filters.activeCount" = "%d active";
+
+"help.feedback.title" = "Share an idea";
+"help.feedback.subtitle" = "Tell us what would help you build stronger relationships in Owlphant.";
+"help.feedback.subject.placeholder" = "Subject";
+"help.feedback.message.placeholder" = "Describe your idea, friction, or feature request";
+"help.feedback.contact.placeholder" = "Your email (optional)";
+"help.feedback.send" = "Send feedback";
+"help.feedback.success" = "Thanks, your feedback was prepared successfully.";
+"help.feedback.error.required" = "Please enter both a subject and suggestion.";
+"help.feedback.error.email" = "Please enter a valid email address.";
+"help.feedback.error.sendUnavailable" = "Mail is not available on this device.";
+"help.feedback.error.sendFailed" = "Could not send your suggestion right now.";
+"help.feedback.mail.body.suggestion" = "Suggestion";
+"help.feedback.mail.body.contact" = "Contact email";
+"help.feedback.mail.body.noContact" = "Not provided";
+"help.feedback.mail.body.details" = "App details";
+"help.feedback.mail.body.device" = "Device";
+"help.feedback.mail.body.system" = "System";
+"help.feedback.mail.body.appVersion" = "App version";
+"help.feedback.mail.body.language" = "Language";
+"help.feedback.mail.body.time" = "Timestamp";
 
 "settings.appearance.title" = "Appearance";
 "settings.language.title" = "Language";
