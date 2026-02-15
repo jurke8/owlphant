@@ -52,6 +52,10 @@ struct ContactFormState {
     var x = ""
     var notes = ""
     var tags = ""
+    var customFields: [ContactCustomField] = []
+    var customFieldDraftLabel = ""
+    var customFieldDraftValue = ""
+    var editingCustomFieldId: UUID?
     var coffeeReminderAt: TimeInterval?
     var stayInTouchEveryDays: Int?
     var interactions: [ContactInteraction] = []
@@ -102,32 +106,7 @@ final class ContactsViewModel: ObservableObject {
         if trimmed.isEmpty {
             filtered = contacts
         } else {
-            filtered = contacts.filter { contact in
-                let channelText = [
-                    contact.emails.joined(separator: " "),
-                    contact.phones.joined(separator: " "),
-                    (contact.facebook ?? []).joined(separator: " "),
-                    (contact.linkedin ?? []).joined(separator: " "),
-                    (contact.instagram ?? []).joined(separator: " "),
-                    (contact.x ?? []).joined(separator: " "),
-                ].joined(separator: " ")
-
-                let haystack = [
-                    contact.firstName,
-                    contact.lastName,
-                    contact.nickname ?? "",
-                    contact.birthday ?? "",
-                    contact.placeOfBirth ?? "",
-                    contact.placeOfLiving ?? "",
-                    contact.company ?? "",
-                    contact.workPosition ?? "",
-                    channelText,
-                    contact.notes ?? "",
-                    contact.interactions.map(\.note).joined(separator: " "),
-                    contact.groups.joined(separator: " "),
-                ].joined(separator: " ").lowercased()
-                return haystack.contains(trimmed)
-            }
+            filtered = contacts.filter { searchableText(for: $0).contains(trimmed) }
         }
 
         let normalizedSelectedGroups = Set(selectedGroups.map(normalizeGroupKey))
@@ -398,6 +377,10 @@ final class ContactsViewModel: ObservableObject {
         form.x = (contact.x ?? []).joined(separator: ", ")
         form.notes = contact.notes ?? ""
         form.tags = contact.tags.joined(separator: ", ")
+        form.customFields = contact.resolvedCustomFields
+        form.customFieldDraftLabel = ""
+        form.customFieldDraftValue = ""
+        form.editingCustomFieldId = nil
         form.interactions = contact.interactions.sorted { $0.date > $1.date }
         form.interactionDraftDate = Date()
         form.interactionDraftNote = ""
@@ -475,6 +458,7 @@ final class ContactsViewModel: ObservableObject {
             x: xLinks,
             notes: normalizedOptional(form.notes),
             tags: parseCSV(form.tags),
+            customFields: normalizedCustomFields(form.customFields),
             relationships: form.relationships,
             interactions: normalizedInteractions(form.interactions),
             coffeeReminderAt: normalizedFutureTimestamp(form.coffeeReminderAt),
@@ -567,6 +551,42 @@ final class ContactsViewModel: ObservableObject {
         form.relationshipDraftTargetId = relationship.contactId
         form.relationshipDraftType = relationship.type
         form.relationshipDraftIndex = idx
+    }
+
+    func addOrUpdateCustomFieldDraft() {
+        let label = form.customFieldDraftLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        let value = form.customFieldDraftValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !label.isEmpty, !value.isEmpty else { return }
+
+        if let editingId = form.editingCustomFieldId,
+           let idx = form.customFields.firstIndex(where: { $0.id == editingId }) {
+            form.customFields[idx].label = label
+            form.customFields[idx].value = value
+        } else {
+            form.customFields.append(ContactCustomField(id: UUID(), label: label, value: value))
+        }
+
+        resetCustomFieldDraft()
+    }
+
+    func editCustomField(_ customField: ContactCustomField) {
+        guard form.customFields.contains(where: { $0.id == customField.id }) else { return }
+        form.customFieldDraftLabel = customField.label
+        form.customFieldDraftValue = customField.value
+        form.editingCustomFieldId = customField.id
+    }
+
+    func removeCustomField(_ customField: ContactCustomField) {
+        form.customFields.removeAll { $0.id == customField.id }
+        if form.editingCustomFieldId == customField.id {
+            resetCustomFieldDraft()
+        }
+    }
+
+    func resetCustomFieldDraft() {
+        form.customFieldDraftLabel = ""
+        form.customFieldDraftValue = ""
+        form.editingCustomFieldId = nil
     }
 
     func addOrUpdateInteractionDraft() {
@@ -830,6 +850,37 @@ final class ContactsViewModel: ObservableObject {
             .lowercased()
     }
 
+    private func searchableText(for contact: Contact) -> String {
+        let channelText = [
+            contact.emails.joined(separator: " "),
+            contact.phones.joined(separator: " "),
+            (contact.facebook ?? []).joined(separator: " "),
+            (contact.linkedin ?? []).joined(separator: " "),
+            (contact.instagram ?? []).joined(separator: " "),
+            (contact.x ?? []).joined(separator: " "),
+        ].joined(separator: " ")
+
+        let interactionsText = contact.interactions.map { $0.note }.joined(separator: " ")
+        let groupsText = contact.groups.joined(separator: " ")
+        let customFieldsText = contact.resolvedCustomFields.map { "\($0.label) \($0.value)" }.joined(separator: " ")
+
+        return [
+            contact.firstName,
+            contact.lastName,
+            contact.nickname ?? "",
+            contact.birthday ?? "",
+            contact.placeOfBirth ?? "",
+            contact.placeOfLiving ?? "",
+            contact.company ?? "",
+            contact.workPosition ?? "",
+            channelText,
+            contact.notes ?? "",
+            interactionsText,
+            groupsText,
+            customFieldsText,
+        ].joined(separator: " ").lowercased()
+    }
+
     private func parseOptionalCSV(_ value: String) -> [String]? {
         let parsed = parseCSV(value)
         return parsed.isEmpty ? nil : parsed
@@ -905,6 +956,32 @@ final class ContactsViewModel: ObservableObject {
             }
             .filter { !$0.note.isEmpty }
             .sorted { $0.date > $1.date }
+    }
+
+    private func normalizedCustomFields(_ customFields: [ContactCustomField]) -> [ContactCustomField] {
+        var result: [ContactCustomField] = []
+        var seen: Set<String> = []
+
+        for customField in customFields {
+            let trimmedLabel = customField.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedValue = customField.value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedLabel.isEmpty, !trimmedValue.isEmpty else { continue }
+
+            let key = normalizeCustomFieldLabelKey(trimmedLabel)
+            guard !seen.contains(key) else { continue }
+
+            seen.insert(key)
+            result.append(ContactCustomField(id: UUID(), label: trimmedLabel, value: trimmedValue))
+        }
+
+        return result
+    }
+
+    private func normalizeCustomFieldLabelKey(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 
     private func syncReminders() async {
@@ -994,6 +1071,7 @@ final class ContactsViewModel: ObservableObject {
             x: existing.x,
             notes: existing.notes,
             tags: existing.tags,
+            customFields: existing.customFields,
             relationships: existing.relationships,
             interactions: existing.interactions,
             coffeeReminderAt: existing.coffeeReminderAt,
@@ -1022,6 +1100,7 @@ final class ContactsViewModel: ObservableObject {
             x: nil,
             notes: nil,
             tags: [],
+            customFields: nil,
             relationships: [],
             interactions: [],
             coffeeReminderAt: nil,

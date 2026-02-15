@@ -100,6 +100,12 @@ struct ContactInteraction: Codable, Hashable, Identifiable {
     var note: String
 }
 
+struct ContactCustomField: Codable, Hashable, Identifiable {
+    var id: UUID
+    var label: String
+    var value: String
+}
+
 struct Contact: Codable, Identifiable, Hashable {
     var id: UUID
     var firstName: String
@@ -119,6 +125,7 @@ struct Contact: Codable, Identifiable, Hashable {
     var x: [String]? = nil
     var notes: String?
     var tags: [String]
+    var customFields: [ContactCustomField]? = nil
     var relationships: [ContactRelationship]
     var interactions: [ContactInteraction] = []
     var coffeeReminderAt: TimeInterval?
@@ -128,6 +135,10 @@ struct Contact: Codable, Identifiable, Hashable {
     var groups: [String] {
         get { tags }
         set { tags = newValue }
+    }
+
+    var resolvedCustomFields: [ContactCustomField] {
+        customFields ?? []
     }
 
     var displayName: String {

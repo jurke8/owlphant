@@ -218,25 +218,6 @@ struct ContactsView: View {
                         .font(.system(.caption, design: .rounded).weight(.semibold))
                         .textCase(.uppercase)
                         .foregroundStyle(AppTheme.muted)
-
-                    if viewModel.activeGroupFilterCount > 0 {
-                        Text(L10n.format("contacts.filters.activeCount", viewModel.activeGroupFilterCount))
-                            .font(.system(.caption2, design: .rounded).weight(.bold))
-                            .foregroundStyle(AppTheme.text)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(AppTheme.surfaceAlt)
-                            .clipShape(Capsule())
-                    }
-
-                    if viewModel.activeGroupFilterCount > 0 {
-                        Button(L10n.tr("common.clear")) {
-                            viewModel.clearGroupFilters()
-                        }
-                        .font(.system(.caption, design: .rounded).weight(.semibold))
-                        .foregroundStyle(AppTheme.tint)
-                        .buttonStyle(.plain)
-                    }
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -552,6 +533,32 @@ private struct ContactCardView: View {
                 }
             }
 
+            if !visibleCustomFields.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(visibleCustomFields) { customField in
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("\(customField.label):")
+                                .font(.system(.caption, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+                            Text(customField.value)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    if hiddenCustomFieldCount > 0 {
+                        Text("+\(hiddenCustomFieldCount)")
+                            .font(.system(.caption2, design: .rounded).weight(.semibold))
+                            .foregroundStyle(AppTheme.muted)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(AppTheme.surfaceAlt.opacity(0.5))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+
             if let latestInteraction {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L10n.tr("contacts.card.lastInteraction"))
@@ -666,6 +673,14 @@ private struct ContactCardView: View {
         }
     }
 
+    private var visibleCustomFields: [ContactCustomField] {
+        Array(contact.resolvedCustomFields.prefix(2))
+    }
+
+    private var hiddenCustomFieldCount: Int {
+        max(0, contact.resolvedCustomFields.count - visibleCustomFields.count)
+    }
+
     private static let interactionDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("d MMM, HH:mm")
@@ -682,24 +697,50 @@ private struct ContactListRowView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            if isSelectionMode {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(isSelected ? AppTheme.tint : AppTheme.muted)
-            }
+            avatarOrSelectionIndicator
 
-            HStack(spacing: 0) {
+            HStack(spacing: 6) {
                 Text(listDisplayName)
                     .font(.system(.footnote, design: .rounded).weight(.semibold))
                     .foregroundStyle(AppTheme.text)
                     .lineLimit(1)
-                Spacer(minLength: 0)
+                    .truncationMode(.tail)
+                    .frame(minWidth: 100, alignment: .leading)
+                    .layoutPriority(2)
+
+                metadataSeparator
+                    .padding(.horizontal, 1)
+
+                HStack(spacing: 3) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(AppTheme.muted)
+
+                    Text(placeOfLivingDisplay)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(AppTheme.muted)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .frame(minWidth: 56, maxWidth: .infinity, alignment: .leading)
+                .layoutPriority(0)
+
+                metadataSeparator
+                    .padding(.horizontal, 1)
+
+                Text(groupsDisplay)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppTheme.muted)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(minWidth: 78, maxWidth: 128, alignment: .trailing)
+                    .layoutPriority(1)
             }
-            .contentShape(Rectangle())
-            .onTapGesture(perform: onPrimaryTap)
         }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onPrimaryTap)
         .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.vertical, 8)
         .background(isSelected ? AppTheme.tint.opacity(0.16) : AppTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
@@ -710,11 +751,65 @@ private struct ContactListRowView: View {
         .onLongPressGesture(perform: onLongPress)
     }
 
+    @ViewBuilder
+    private var avatarOrSelectionIndicator: some View {
+        if isSelectionMode {
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(isSelected ? AppTheme.tint : AppTheme.muted)
+                .frame(width: 32, height: 32)
+        } else {
+            ContactAvatarView(contact: contact, size: 32)
+        }
+    }
+
+    private var metadataSeparator: some View {
+        Text("•")
+            .font(.system(size: 9, weight: .semibold, design: .rounded))
+            .foregroundStyle(AppTheme.muted.opacity(0.42))
+    }
+
     private var listDisplayName: String {
         let first = contact.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         let last = contact.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
         let combined = "\(first) \(last)".trimmingCharacters(in: .whitespacesAndNewlines)
         return combined.isEmpty ? L10n.tr("contacts.unnamed") : combined
+    }
+
+    private var placeOfLivingDisplay: String {
+        let place = (contact.placeOfLiving ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !place.isEmpty else { return "-" }
+
+        let city = place
+            .split(separator: ",", maxSplits: 1, omittingEmptySubsequences: true)
+            .first?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        return city.isEmpty ? place : city
+    }
+
+    private var groupsDisplay: String {
+        let cleanedGroups = contact.groups
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !cleanedGroups.isEmpty else { return "-" }
+
+        if cleanedGroups.count == 1 {
+            return cleanedGroups[0]
+        }
+
+        if cleanedGroups.count == 2 {
+            let combined = "\(cleanedGroups[0]), \(cleanedGroups[1])"
+            return combined.count <= 22 ? combined : "\(cleanedGroups[0]) +1"
+        }
+
+        let preview = cleanedGroups.prefix(2).joined(separator: ", ")
+        let remaining = cleanedGroups.count - 2
+        if remaining > 0 {
+            return "\(preview) +\(remaining)"
+        }
+        return preview
     }
 }
 
@@ -1009,6 +1104,7 @@ private struct ContactFormSheet: View {
                             TextField(L10n.tr("contacts.form.nickname"), text: binding(\.nickname))
                                 .appInputChrome()
                             groupEditor
+                            customFieldsEditor
                             TextField(L10n.tr("contacts.form.notes"), text: binding(\.notes), axis: .vertical)
                                 .lineLimit(3...5)
                                 .appInputChrome()
@@ -1216,6 +1312,109 @@ private struct ContactFormSheet: View {
                 .disabled(groupDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
+    }
+
+    private var customFieldsEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(L10n.tr("contacts.form.customFields.title"))
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(AppTheme.muted)
+
+            TextField(
+                L10n.tr("contacts.form.customFields.labelPlaceholder"),
+                text: Binding(
+                    get: { viewModel.form.customFieldDraftLabel },
+                    set: { newValue in
+                        hasInteractedWithForm = true
+                        viewModel.form.customFieldDraftLabel = newValue
+                    }
+                )
+            )
+            .appInputChrome()
+
+            TextField(
+                L10n.tr("contacts.form.customFields.valuePlaceholder"),
+                text: Binding(
+                    get: { viewModel.form.customFieldDraftValue },
+                    set: { newValue in
+                        hasInteractedWithForm = true
+                        viewModel.form.customFieldDraftValue = newValue
+                    }
+                )
+            )
+            .appInputChrome()
+
+            HStack(spacing: 8) {
+                Button(viewModel.form.editingCustomFieldId == nil ? L10n.tr("contacts.form.customFields.add") : L10n.tr("contacts.form.customFields.update")) {
+                    hasInteractedWithForm = true
+                    viewModel.addOrUpdateCustomFieldDraft()
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(!canSubmitCustomFieldDraft)
+
+                if viewModel.form.editingCustomFieldId != nil {
+                    Button(L10n.tr("common.cancel")) {
+                        hasInteractedWithForm = true
+                        viewModel.resetCustomFieldDraft()
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(AppTheme.muted)
+                }
+            }
+
+            if viewModel.form.customFields.isEmpty {
+                Text(L10n.tr("contacts.form.customFields.empty"))
+                    .font(.system(.footnote, design: .rounded))
+                    .foregroundStyle(AppTheme.muted)
+            } else {
+                ForEach(viewModel.form.customFields) { customField in
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(customField.label)
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(AppTheme.text)
+                            Text(customField.value)
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(AppTheme.muted)
+                                .lineLimit(2)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Button {
+                            hasInteractedWithForm = true
+                            viewModel.editCustomField(customField)
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(AppTheme.muted)
+
+                        Button(role: .destructive) {
+                            hasInteractedWithForm = true
+                            viewModel.removeCustomField(customField)
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(AppTheme.surfaceAlt.opacity(0.45))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppTheme.stroke.opacity(0.45), lineWidth: 1)
+                    )
+                }
+            }
+        }
+    }
+
+    private var canSubmitCustomFieldDraft: Bool {
+        !viewModel.form.customFieldDraftLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !viewModel.form.customFieldDraftValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private var relationshipSection: some View {

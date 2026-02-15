@@ -93,7 +93,6 @@
 "contacts.form.groups.create" = "Kreiraj";
 "contacts.filters.quick" = "Grupe";
 "contacts.filters.all" = "Sve";
-"contacts.filters.activeCount" = "%d aktivno";
 "contacts.view.title" = "Prikaz";
 "contacts.view.mode.list" = "Lista";
 "contacts.view.mode.card" = "Kartice";
@@ -110,6 +109,12 @@
 "contacts.form.section.work" = "Posao";
 "contacts.form.section.channels" = "Kanali";
 "contacts.form.section.personal" = "Osobno";
+"contacts.form.customFields.title" = "Prilagodena polja";
+"contacts.form.customFields.labelPlaceholder" = "Naziv polja";
+"contacts.form.customFields.valuePlaceholder" = "Vrijednost";
+"contacts.form.customFields.add" = "Dodaj polje";
+"contacts.form.customFields.update" = "Azuriraj polje";
+"contacts.form.customFields.empty" = "Jos nema prilagodenih polja.";
 "contacts.form.section.interactions" = "Povijest interakcija";
 "contacts.form.section.reminders" = "Podsjetnici";
 "contacts.form.relationship.contact" = "Kontakt";

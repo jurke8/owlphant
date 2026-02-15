@@ -93,7 +93,6 @@
 "contacts.form.groups.create" = "Create";
 "contacts.filters.quick" = "Groups";
 "contacts.filters.all" = "All";
-"contacts.filters.activeCount" = "%d active";
 "contacts.view.title" = "View";
 "contacts.view.mode.list" = "List";
 "contacts.view.mode.card" = "Cards";
@@ -110,6 +109,12 @@
 "contacts.form.section.work" = "Work";
 "contacts.form.section.channels" = "Channels";
 "contacts.form.section.personal" = "Personal";
+"contacts.form.customFields.title" = "Custom fields";
+"contacts.form.customFields.labelPlaceholder" = "Field name";
+"contacts.form.customFields.valuePlaceholder" = "Value";
+"contacts.form.customFields.add" = "Add field";
+"contacts.form.customFields.update" = "Update field";
+"contacts.form.customFields.empty" = "No custom fields yet.";
 "contacts.form.section.interactions" = "Interaction history";
 "contacts.form.section.reminders" = "Reminders";
 "contacts.form.relationship.contact" = "Contact";
