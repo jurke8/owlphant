@@ -26,7 +26,7 @@ struct ContactsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var pendingDelete: Contact?
     @FocusState private var isSearchFocused: Bool
-    @State private var layoutMode: ContactsLayoutMode = .card
+    @State private var layoutMode: ContactsLayoutMode = .list
 
     var body: some View {
         NavigationStack {
@@ -60,46 +60,51 @@ struct ContactsView: View {
                                         .foregroundStyle(AppTheme.muted)
                                 }
                             } else {
-                                switch layoutMode {
-                                case .list:
-                                    ForEach(viewModel.filteredContacts) { contact in
-                                        ContactListRowView(
-                                            contact: contact,
-                                            onEdit: { viewModel.startEdit(contact) },
-                                            onDelete: { pendingDelete = contact }
-                                        )
-                                    }
-                                case .card:
-                                    ForEach(viewModel.filteredContacts) { contact in
-                                        ContactCardView(
-                                            contact: contact,
-                                            relationshipLabel: { id in viewModel.relationshipTargetName(id) },
-                                            onRelationshipTap: { relationship in
-                                                viewModel.startEdit(contact)
-                                                viewModel.editRelationship(relationship)
-                                            },
-                                            onEdit: { viewModel.startEdit(contact) },
-                                            onDelete: { pendingDelete = contact }
-                                        )
-                                    }
-                                case .relationship:
-                                    SectionCard {
-                                        Text(L10n.tr("contacts.relationship.title"))
-                                            .font(.system(.headline, design: .rounded).weight(.semibold))
-                                            .foregroundStyle(AppTheme.text)
-                                        Text(L10n.tr("contacts.relationship.subtitle"))
-                                            .font(.system(.subheadline, design: .rounded))
-                                            .foregroundStyle(AppTheme.muted)
+                                Group {
+                                    switch layoutMode {
+                                    case .list:
+                                        ForEach(viewModel.filteredContacts) { contact in
+                                            ContactListRowView(
+                                                contact: contact,
+                                                onEdit: { viewModel.startEdit(contact) },
+                                                onDelete: { pendingDelete = contact }
+                                            )
+                                            .id("list-\(contact.id.uuidString)")
+                                        }
+                                    case .card:
+                                        ForEach(viewModel.filteredContacts) { contact in
+                                            ContactCardView(
+                                                contact: contact,
+                                                relationshipLabel: { id in viewModel.relationshipTargetName(id) },
+                                                onRelationshipTap: { relationship in
+                                                    viewModel.startEdit(contact)
+                                                    viewModel.editRelationship(relationship)
+                                                },
+                                                onEdit: { viewModel.startEdit(contact) },
+                                                onDelete: { pendingDelete = contact }
+                                            )
+                                            .id("card-\(contact.id.uuidString)")
+                                        }
+                                    case .relationship:
+                                        SectionCard {
+                                            Text(L10n.tr("contacts.relationship.title"))
+                                                .font(.system(.headline, design: .rounded).weight(.semibold))
+                                                .foregroundStyle(AppTheme.text)
+                                            Text(L10n.tr("contacts.relationship.subtitle"))
+                                                .font(.system(.subheadline, design: .rounded))
+                                                .foregroundStyle(AppTheme.muted)
 
-                                        RelationshipGraphView(
-                                            contacts: viewModel.filteredContacts,
-                                            onContactTap: { contact in
-                                                viewModel.startEdit(contact)
-                                            }
-                                        )
-                                        .frame(height: 380)
+                                            RelationshipGraphView(
+                                                contacts: viewModel.filteredContacts,
+                                                onContactTap: { contact in
+                                                    viewModel.startEdit(contact)
+                                                }
+                                            )
+                                            .frame(height: 380)
+                                        }
                                     }
                                 }
+                                .id(layoutMode)
                             }
                         }
                         .padding(20)
@@ -580,22 +585,20 @@ private struct ContactListRowView: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            ContactAvatarView(contact: contact, size: 40)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(contact.displayName)
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(AppTheme.text)
-                    .lineLimit(1)
+        HStack(spacing: 8) {
+            Button(action: onEdit) {
+                HStack(spacing: 0) {
+                    Text(listDisplayName)
+                        .font(.system(.footnote, design: .rounded).weight(.semibold))
+                        .foregroundStyle(AppTheme.text)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
             }
-
-            Spacer(minLength: 0)
+            .buttonStyle(.plain)
 
             HStack(spacing: 8) {
-                Button(action: onEdit) {
-                    Image(systemName: "pencil")
-                }
                 Button(role: .destructive, action: onDelete) {
                     Image(systemName: "trash")
                 }
@@ -603,14 +606,21 @@ private struct ContactListRowView: View {
             .buttonStyle(.borderless)
             .foregroundStyle(AppTheme.muted)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(AppTheme.stroke, lineWidth: 1)
         )
+    }
+
+    private var listDisplayName: String {
+        let first = contact.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let last = contact.lastName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = "\(first) \(last)".trimmingCharacters(in: .whitespacesAndNewlines)
+        return combined.isEmpty ? L10n.tr("contacts.unnamed") : combined
     }
 }
 
