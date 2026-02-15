@@ -6,6 +6,7 @@ import SwiftUI
 struct ContactsView: View {
     @ObservedObject var viewModel: ContactsViewModel
     @State private var pendingDelete: Contact?
+    @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -109,14 +110,7 @@ struct ContactsView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(L10n.tr("contacts.header.subtitle"))
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(AppTheme.muted)
-                TextField(L10n.tr("contacts.header.searchPlaceholder"), text: $viewModel.query)
-                    .textInputAutocapitalization(.never)
-                    .appInputChrome()
-            }
+            searchPill
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
@@ -225,6 +219,44 @@ struct ContactsView: View {
         }
     }
 
+    private var searchPill: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(searchIconColor)
+
+            TextField(L10n.tr("contacts.header.searchPlaceholder"), text: $viewModel.query)
+                .textInputAutocapitalization(.never)
+                .focused($isSearchFocused)
+                .font(.system(.subheadline, design: .rounded))
+                .foregroundStyle(AppTheme.text)
+
+            if !viewModel.query.isEmpty {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        viewModel.query = ""
+                    }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(searchIconColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.tr("common.clear"))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(searchBackground)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule().stroke(searchBorder, lineWidth: 1)
+        )
+        .animation(.easeInOut(duration: 0.2), value: isSearchFocused)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.query)
+        .accessibilityLabel(L10n.tr("contacts.header.searchPlaceholder"))
+    }
+
     private var savedContactsText: String {
         L10n.format("contacts.header.savedCount", viewModel.filteredContacts.count)
     }
@@ -272,6 +304,18 @@ struct ContactsView: View {
         case .descending:
             return AppTheme.accent.opacity(0.55)
         }
+    }
+
+    private var searchBackground: Color {
+        isSearchFocused ? AppTheme.tint.opacity(0.14) : AppTheme.surfaceAlt
+    }
+
+    private var searchBorder: Color {
+        isSearchFocused ? AppTheme.tint.opacity(0.7) : AppTheme.stroke
+    }
+
+    private var searchIconColor: Color {
+        isSearchFocused ? AppTheme.tint : AppTheme.muted
     }
 
     private func toggleSortDirection() {
