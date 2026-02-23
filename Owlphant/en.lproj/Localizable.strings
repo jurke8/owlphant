@@ -33,7 +33,7 @@
 "contacts.alert.delete.multiple.message" = "Delete %d selected contacts from this device?";
 "contacts.selection.count" = "%d selected";
 "contacts.selection.cancel" = "Cancel selection";
-"contacts.header.subtitle" = "Build strong relationships with reminders and insights.";
+"contacts.header.subtitle" = "Keep what matters, find what you need.";
 "contacts.header.searchPlaceholder" = "Search by name, place, birthday, notes";
 "contacts.header.recent" = "Recent";
 "contacts.header.savedCount" = "%d saved";

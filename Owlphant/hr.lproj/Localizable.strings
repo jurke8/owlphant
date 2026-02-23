@@ -33,7 +33,7 @@
 "contacts.alert.delete.multiple.message" = "Izbrisati %d odabranih kontakata s ovog uređaja?";
 "contacts.selection.count" = "%d odabrano";
 "contacts.selection.cancel" = "Poništi odabir";
-"contacts.header.subtitle" = "Gradi snažne odnose uz podsjetnike i uvide.";
+"contacts.header.subtitle" = "Zadrži što je važno, pronađi što ti treba.";
 "contacts.header.searchPlaceholder" = "Pretraži po imenu, mjestu, rođendanu ili bilješkama";
 "contacts.header.recent" = "Nedavno";
 "contacts.header.savedCount" = "%d spremljeno";
